@@ -1,0 +1,199 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -5%, rgba(230,59,25,0.18) 0%, transparent 65%),
+    var(--bg);
+}
+
+/* Nav */
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(13,13,13,0.8);
+  backdrop-filter: blur(12px);
+}
+
+.logo {
+  font-family: var(--font-head);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.05em;
+}
+.logo span { color: var(--red); }
+
+.navLinks { display: flex; align-items: center; gap: 12px; }
+
+.navLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  transition: color var(--transition);
+}
+.navLink:hover { color: var(--text); }
+
+.navCta {
+  background: var(--red);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: 8px;
+  transition: background var(--transition);
+}
+.navCta:hover { background: var(--red-dark); }
+
+/* Hero */
+.hero {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 80px 24px;
+}
+
+.heroTag {
+  display: inline-block;
+  background: var(--red-soft);
+  border: 1px solid rgba(230,59,25,0.3);
+  color: var(--red);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 5px 14px;
+  border-radius: 99px;
+  margin-bottom: 24px;
+  animation: fadeUp 0.4s ease both;
+}
+
+.heroTitle {
+  font-size: clamp(48px, 8vw, 88px);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+  animation: fadeUp 0.4s 0.1s ease both;
+}
+
+.accent { color: var(--red); }
+
+.heroSub {
+  font-size: clamp(16px, 2vw, 20px);
+  color: var(--text-muted);
+  max-width: 500px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  animation: fadeUp 0.4s 0.2s ease both;
+}
+
+.heroCtas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+  animation: fadeUp 0.4s 0.3s ease both;
+}
+
+.ctaPrimary {
+  background: var(--red);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 14px 32px;
+  border-radius: 10px;
+  transition: all var(--transition);
+}
+.ctaPrimary:hover {
+  background: var(--red-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(230,59,25,0.3);
+}
+
+.ctaSecondary {
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 14px 28px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  transition: all var(--transition);
+}
+.ctaSecondary:hover {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
+/* Features */
+.features {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 40px 40px 60px;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.featureCard {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  transition: border-color var(--transition);
+}
+.featureCard:hover { border-color: #3a3a3a; }
+
+.featureIcon {
+  width: 44px; height: 44px;
+  background: var(--red-soft);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--red);
+  margin-bottom: 14px;
+}
+
+.featureTitle {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-head);
+  margin-bottom: 8px;
+}
+
+.featureDesc {
+  font-size: 13px;
+  color: var(--text-muted);
+  line-height: 1.6;
+}
+
+/* Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 40px;
+  border-top: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footerText { font-size: 13px; color: var(--text-muted); }
+
+@media (max-width: 640px) {
+  .nav { padding: 16px 20px; }
+  .hero { padding: 60px 20px; }
+  .features { padding: 32px 20px 48px; }
+  .footer { padding: 20px; flex-direction: column; text-align: center; }
+}
