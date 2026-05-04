@@ -4,33 +4,42 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(undefined) // undefined = loading
+  const [session, setSession] = useState(undefined) // undefined = still initializing
   const [profile, setProfile] = useState(null)
+  const [profileLoading, setProfileLoading] = useState(false)
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
-      if (session) fetchProfile(session.user.id)
+      if (session) {
+        fetchProfile(session.user.id)
+      }
     })
 
-    // Listen for auth changes
+    // React to login / logout events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
-      if (session) fetchProfile(session.user.id)
-      else setProfile(null)
+      if (session) {
+        fetchProfile(session.user.id)
+      } else {
+        setProfile(null)
+        setProfileLoading(false)
+      }
     })
 
     return () => subscription.unsubscribe()
   }, [])
 
   async function fetchProfile(userId) {
+    setProfileLoading(true)
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
       .eq('id', userId)
       .single()
     if (!error) setProfile(data)
+    setProfileLoading(false)
   }
 
   async function signUp({ email, password, fullName, role }) {
@@ -53,11 +62,14 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
+  // Loading = session not yet determined, OR session exists but profile not fetched yet
+  const loading = session === undefined || (session !== null && profileLoading)
+
   const value = {
     session,
     profile,
     user: session?.user ?? null,
-    loading: session === undefined,
+    loading,
     isClient: profile?.role === 'client',
     isOwner: profile?.role === 'owner',
     signUp,
