@@ -1,7 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import { LayoutDashboard, Car, ClipboardList } from 'lucide-react'
 import Navbar from './Navbar'
-import styles from './Layout.module.css'
 
 const OWNER_LINKS = [
   { to: '/owner/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
@@ -11,9 +10,9 @@ const OWNER_LINKS = [
 
 export default function OwnerLayout() {
   return (
-    <div className={styles.root}>
+    <div className="min-h-screen bg-bg-base text-text-primary">
       <Navbar links={OWNER_LINKS} />
-      <main className={styles.main}>
+      <main className="mx-auto w-full max-w-6xl px-6 py-8">
         <Outlet />
       </main>
     </div>

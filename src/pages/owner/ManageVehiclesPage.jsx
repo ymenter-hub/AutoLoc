@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Plus, Pencil, Trash2, Car } from 'lucide-react'
+import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
+import { useToast } from '../../contexts/ToastContext'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Select from '../../components/ui/Select'
 import Modal from '../../components/ui/Modal'
-import { Badge } from '../../components/ui/Badge'
-import styles from './Owner.module.css'
 
 const EMPTY_FORM = {
   brand: '', model: '', year: '', color: '', plate_number: '',
@@ -24,7 +24,7 @@ export default function ManageVehiclesPage() {
   const [form, setForm] = useState(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(null)
-  const [toast, setToast] = useState(null)
+  const { addToast } = useToast()
 
   useEffect(() => { load() }, [])
 
@@ -36,10 +36,6 @@ export default function ManageVehiclesPage() {
       .order('created_at', { ascending: false })
     setVehicles(data ?? [])
     setLoading(false)
-  }
-
-  function showToast(msg, type = 'info') {
-    setToast({ msg, type }); setTimeout(() => setToast(null), 3500)
   }
 
   function openAdd() { setForm(EMPTY_FORM); setEditTarget(null); setModal('form') }
@@ -79,8 +75,8 @@ export default function ManageVehiclesPage() {
     }
 
     setSaving(false)
-    if (error) { showToast(error.message, 'error'); return }
-    showToast(editTarget ? 'Vehicle updated.' : 'Vehicle added.', 'success')
+    if (error) { addToast(error.message, 'error'); return }
+    addToast(editTarget ? 'Vehicle updated.' : 'Vehicle added.', 'success')
     closeModal()
     load()
   }
@@ -90,17 +86,17 @@ export default function ManageVehiclesPage() {
     setDeleting(id)
     const { error } = await supabase.from('vehicles').delete().eq('id', id)
     setDeleting(null)
-    if (error) { showToast(error.message, 'error'); return }
+    if (error) { addToast(error.message, 'error'); return }
     setVehicles(vs => vs.filter(v => v.id !== id))
-    showToast('Vehicle deleted.', 'info')
+    addToast('Vehicle deleted.', 'info')
   }
 
   return (
-    <div className="fade-up">
-      <div className={styles.header}>
+    <div>
+      <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h1 className={styles.pageTitle}>My Fleet</h1>
-          <p className={styles.sub}>Manage your vehicles</p>
+          <h1 className="font-heading text-3xl tracking-widest">My Fleet</h1>
+          <p className="mt-2 text-sm text-text-muted">Manage your vehicles</p>
         </div>
         <Button onClick={openAdd} size="md">
           <Plus size={16} /> Add Vehicle
@@ -108,29 +104,48 @@ export default function ManageVehiclesPage() {
       </div>
 
       {loading ? (
-        <div className={styles.empty}><div className="spinner" /></div>
+        <div className="grid gap-6 md:grid-cols-3">
+          {Array.from({ length: 6 }).map((_, idx) => (
+            <div key={`sk-${idx}`} className="rounded-2xl border border-white/10 bg-bg-card p-5">
+              <div className="h-32 w-full rounded-xl skeleton" />
+              <div className="mt-4 h-4 w-40 rounded skeleton" />
+              <div className="mt-2 h-3 w-28 rounded skeleton" />
+              <div className="mt-4 h-9 w-32 rounded-xl skeleton" />
+            </div>
+          ))}
+        </div>
       ) : vehicles.length === 0 ? (
-        <div className={styles.empty}>
-          <Car size={36} color="var(--text-muted)" />
+        <div className="flex flex-col items-center gap-3 py-16 text-text-muted">
+          <Car size={36} />
           <p>No vehicles yet. Add your first one.</p>
         </div>
       ) : (
-        <div className={styles.fleetGrid}>
-          {vehicles.map(v => (
-            <div key={v.id} className={styles.fleetCard}>
-              <div className={styles.fleetImg}>
+        <div className="grid gap-6 md:grid-cols-3">
+          {vehicles.map((v, index) => (
+            <motion.div
+              key={v.id}
+              className="rounded-2xl border border-transparent bg-bg-card p-5"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.06 }}
+              whileHover={{ y: -6, boxShadow: '0 20px 40px #E8B84B15', borderColor: '#E8B84B44' }}
+            >
+              <div className="relative h-32 w-full overflow-hidden rounded-xl bg-bg-base/50">
                 {v.image_url
-                  ? <img src={v.image_url} alt={`${v.brand} ${v.model}`} />
-                  : <Car size={36} color="var(--text-muted)" />}
-                <div className={`${styles.availPill} ${v.is_available ? styles.avail : styles.unavail}`}>
+                  ? <img src={v.image_url} alt={`${v.brand} ${v.model}`} className="h-full w-full object-cover" />
+                  : <div className="flex h-full w-full items-center justify-center text-text-muted"><Car size={36} /></div>}
+                <span className={[
+                  'absolute right-3 top-3 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
+                  v.is_available ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger',
+                ].join(' ')}>
                   {v.is_available ? 'Available' : 'Rented'}
-                </div>
+                </span>
               </div>
-              <div className={styles.fleetBody}>
-                <h3 className={styles.fleetName}>{v.brand} {v.model} ({v.year})</h3>
-                <p className={styles.fleetPlate}>{v.plate_number} · {v.color}</p>
-                <p className={styles.fleetPrice}>{v.daily_price} DZD/day</p>
-                <div className={styles.fleetActions}>
+              <div className="mt-4">
+                <h3 className="text-base font-semibold">{v.brand} {v.model} ({v.year})</h3>
+                <p className="mt-1 text-xs text-text-muted">{v.plate_number} · {v.color}</p>
+                <p className="mt-2 text-sm font-semibold text-accent">{v.daily_price} DZD/day</p>
+                <div className="mt-4 flex flex-wrap gap-2">
                   <Button size="sm" variant="ghost" onClick={() => openEdit(v)}>
                     <Pencil size={13} /> Edit
                   </Button>
@@ -139,24 +154,24 @@ export default function ManageVehiclesPage() {
                   </Button>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
 
       {/* Add/Edit Modal */}
       <Modal isOpen={modal === 'form'} onClose={closeModal} title={editTarget ? 'Edit Vehicle' : 'Add Vehicle'} size="lg">
-        <form onSubmit={saveVehicle} className={styles.vehicleForm}>
-          <div className={styles.row2}>
+        <form onSubmit={saveVehicle} className="flex flex-col gap-4">
+          <div className="grid gap-4 md:grid-cols-2">
             <Input label="Brand" id="brand" name="brand" value={form.brand} onChange={handle} placeholder="Toyota" required />
             <Input label="Model" id="model" name="model" value={form.model} onChange={handle} placeholder="Corolla" required />
           </div>
-          <div className={styles.row3}>
+          <div className="grid gap-4 md:grid-cols-3">
             <Input label="Year" id="year" name="year" type="number" value={form.year} onChange={handle} placeholder="2022" required />
             <Input label="Color" id="color" name="color" value={form.color} onChange={handle} placeholder="White" required />
             <Input label="Plate Number" id="plate_number" name="plate_number" value={form.plate_number} onChange={handle} placeholder="19-DZA-123" required />
           </div>
-          <div className={styles.row3}>
+          <div className="grid gap-4 md:grid-cols-3">
             <Input label="Daily Price (DZD)" id="daily_price" name="daily_price" type="number" value={form.daily_price} onChange={handle} placeholder="3500" required />
             <Select
               label="Fuel Type"
@@ -183,23 +198,17 @@ export default function ManageVehiclesPage() {
               ]}
             />
           </div>
-          <div className={styles.row2}>
+          <div className="grid gap-4 md:grid-cols-2">
             <Input label="Seats" id="seats" name="seats" type="number" value={form.seats} onChange={handle} placeholder="5" />
             <Input label="Image URL (optional)" id="image_url" name="image_url" value={form.image_url} onChange={handle} placeholder="https://..." />
           </div>
           <Input label="Description (optional)" id="description" name="description" value={form.description} onChange={handle} placeholder="Brief description of the vehicle..." />
-          <div className={styles.modalActions}>
+          <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={closeModal}>Cancel</Button>
             <Button type="submit" loading={saving}>{editTarget ? 'Save Changes' : 'Add Vehicle'}</Button>
           </div>
         </form>
       </Modal>
-
-      {toast && (
-        <div className="toast-container">
-          <div className={`toast ${toast.type}`}>{toast.msg}</div>
-        </div>
-      )}
     </div>
   )
 }

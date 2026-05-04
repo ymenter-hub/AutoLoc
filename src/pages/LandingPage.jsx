@@ -1,81 +1,261 @@
 import { Link } from 'react-router-dom'
 import { Car, ShieldCheck, Zap, Users, LayoutDashboard, LogOut } from 'lucide-react'
+import { motion, animate } from 'framer-motion'
+import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import styles from './Landing.module.css'
 
 export default function LandingPage() {
   const { session, profile, signOut } = useAuth()
+  const title = 'AUTO-LOC'
+
+  const stats = useMemo(() => (
+    [
+      { label: 'Total Cars', value: 320 },
+      { label: 'Active Clients', value: 1200 },
+      { label: 'Monthly Rentals', value: 860 },
+    ]
+  ), [])
+
+  const cards = useMemo(() => (
+    [
+      { brand: 'Audi', model: 'A4', price: 7200, fuel: 'petrol', seats: 5, transmission: 'automatic' },
+      { brand: 'Tesla', model: 'Model 3', price: 9800, fuel: 'electric', seats: 5, transmission: 'automatic' },
+      { brand: 'Toyota', model: 'Yaris', price: 4200, fuel: 'hybrid', seats: 5, transmission: 'manual' },
+    ]
+  ), [])
+
+  function StatCounter({ value }) {
+    const [count, setCount] = useState(0)
+
+    useEffect(() => {
+      const controls = animate(0, value, {
+        duration: 1.2,
+        ease: 'easeOut',
+        onUpdate: v => setCount(Math.round(v)),
+      })
+      return () => controls.stop()
+    }, [value])
+
+    return <span>{count}</span>
+  }
+
+  const heroVariants = {
+    hidden: {},
+    show: {
+      transition: { staggerChildren: 0.04 },
+    },
+  }
+
+  const letterVariants = {
+    hidden: { opacity: 0, y: 40 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.4, ease: 'easeOut' } },
+  }
 
   return (
-    <div className={styles.page}>
+    <div className="min-h-screen bg-bg-base text-text-primary">
       {/* Nav */}
-      <nav className={styles.nav}>
-        <span className={styles.logo}>AUTO<span>·</span>LOC</span>
-        <div className={styles.navLinks}>
-          {session ? (
-            <>
-              <div className={styles.userBadge}>
-                <span className={styles.userName}>{profile?.full_name}</span>
-                <span className={styles.userRole}>{profile?.role}</span>
-              </div>
-              <Link to="/dashboard" className={styles.navCta}>
-                <LayoutDashboard size={15} /> Dashboard
-              </Link>
-              <button className={styles.navSignOut} onClick={signOut}>
-                <LogOut size={15} />
-              </button>
-            </>
-          ) : (
-            <>
-              <Link to="/login"    className={styles.navLink}>Sign In</Link>
-              <Link to="/register" className={styles.navCta}>Get Started</Link>
-            </>
-          )}
+      <motion.nav
+        className="sticky top-0 z-40 border-b border-white/10 bg-bg-base/70 backdrop-blur"
+        initial={{ y: -60, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.4, ease: 'easeOut' }}
+      >
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+          <span className="font-heading text-2xl tracking-[0.2em]">
+            AUTO<span className="text-accent">·</span>LOC
+          </span>
+          <div className="flex items-center gap-3">
+            {session ? (
+              <>
+                <div className="hidden flex-col items-end text-right md:flex">
+                  <span className="text-sm font-semibold">{profile?.full_name}</span>
+                  <span className="text-[11px] uppercase tracking-[0.2em] text-accent">{profile?.role}</span>
+                </div>
+                <Link
+                  to="/dashboard"
+                  className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2 text-sm font-bold text-bg-base"
+                >
+                  <LayoutDashboard size={15} /> Dashboard
+                </Link>
+                <button
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/10 text-text-muted hover:text-text-primary"
+                  onClick={signOut}
+                >
+                  <LogOut size={15} />
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/login" className="text-sm text-text-muted hover:text-text-primary">Sign In</Link>
+                <Link
+                  to="/register"
+                  className="rounded-xl bg-accent px-4 py-2 text-sm font-bold text-bg-base"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
+          </div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Hero */}
-      <section className={styles.hero}>
-        <div className={styles.heroTag}>Vehicle Rental Platform</div>
-        <h1 className={styles.heroTitle}>
-          Drive anything.<br />
-          <span className={styles.accent}>Anytime.</span>
-        </h1>
-        <p className={styles.heroSub}>
-          Browse premium vehicles, book instantly, and manage your rentals — all in one place.
-        </p>
-        <div className={styles.heroCtas}>
-          {session ? (
-            <Link to="/dashboard" className={styles.ctaPrimary}>Go to Dashboard</Link>
-          ) : (
-            <>
-              <Link to="/register?role=client" className={styles.ctaPrimary}>Find a Car</Link>
-              <Link to="/register?role=owner"  className={styles.ctaSecondary}>List Your Fleet →</Link>
-            </>
-          )}
+      <section className="relative overflow-hidden">
+        <div className="mesh-bg animate-hue absolute inset-0" />
+        <motion.video
+          className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-25"
+          src="/car.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          initial={{ opacity: 0, scale: 1.05 }}
+          animate={{ opacity: 0.5, scale: 1 }}
+          transition={{ duration: 1.2, ease: 'easeOut' }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-bg-base/40 via-bg-base/70 to-bg-base" />
+        <div className="relative mx-auto flex min-h-[70vh] max-w-6xl flex-col items-center justify-center px-6 py-20 text-center">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent-dim px-4 py-1 text-xs font-semibold uppercase tracking-[0.4em] text-accent">
+            Vehicle Rental Platform
+          </div>
+
+          <motion.h1
+            className="text-glow font-heading text-6xl tracking-[0.3em] sm:text-7xl md:text-8xl"
+            variants={heroVariants}
+            initial="hidden"
+            animate="show"
+          >
+            {title.split('').map((letter, index) => (
+              <motion.span
+                key={`${letter}-${index}`}
+                className="inline-block"
+                variants={letterVariants}
+              >
+                {letter}
+              </motion.span>
+            ))}
+          </motion.h1>
+
+          <motion.p
+            className="mt-6 max-w-2xl text-base text-text-muted sm:text-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5, duration: 0.4 }}
+          >
+            Browse premium vehicles, book instantly, and manage your rentals in one high-performance platform.
+          </motion.p>
+
+          <motion.div
+            className="mt-8 flex flex-wrap items-center justify-center gap-3"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 200, damping: 18, delay: 0.6 }}
+          >
+            {session ? (
+              <Link to="/dashboard" className="rounded-xl bg-accent px-6 py-3 text-sm font-bold text-bg-base">Go to Dashboard</Link>
+            ) : (
+              <>
+                <Link to="/register?role=client" className="rounded-xl bg-accent px-6 py-3 text-sm font-bold text-bg-base">Find a Car</Link>
+                <Link to="/register?role=owner" className="rounded-xl border border-white/15 px-6 py-3 text-sm font-semibold text-text-primary">List Your Fleet →</Link>
+              </>
+            )}
+          </motion.div>
+
+          <motion.div
+            className="mt-10 flex items-center gap-2 rounded-2xl border border-white/10 bg-bg-card/70 px-4 py-2 text-sm text-text-muted"
+            animate={{ y: [0, -12, 0] }}
+            transition={{ repeat: Infinity, duration: 3 }}
+          >
+            <Car size={18} className="text-accent" />
+            Instant bookings. Zero friction.
+          </motion.div>
+
+          <div className="mt-10 grid w-full max-w-3xl grid-cols-1 gap-4 sm:grid-cols-3">
+            {stats.map(stat => (
+              <div key={stat.label} className="rounded-2xl border border-white/10 bg-bg-card/60 px-4 py-4 text-left">
+                <div className="text-2xl font-heading tracking-widest text-accent">
+                  <StatCounter value={stat.value} />
+                </div>
+                <p className="mt-1 text-xs uppercase tracking-[0.3em] text-text-muted">{stat.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
+      {/* Vehicle Highlights */}
+      <section className="mx-auto max-w-6xl px-6 pb-10">
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="font-heading text-3xl tracking-[0.2em]">Featured Fleet</h2>
+          <span className="text-sm text-text-muted">Premium selection</span>
+        </div>
+        <motion.div
+          className="grid gap-6 md:grid-cols-3"
+          initial="hidden"
+          animate="show"
+          variants={{ show: { transition: { staggerChildren: 0.08 } } }}
+        >
+          {cards.map((v, index) => (
+            <motion.div
+              key={`${v.brand}-${v.model}`}
+              className="group rounded-2xl border border-transparent bg-bg-card p-5 transition"
+              variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
+              whileHover={{ y: -6, boxShadow: '0 20px 40px #E8B84B15', borderColor: '#E8B84B44' }}
+              transition={{ delay: index * 0.08 }}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-text-primary">{v.brand} {v.model}</h3>
+                  <p className="text-xs uppercase tracking-[0.3em] text-text-muted">{v.fuel} · {v.transmission}</p>
+                </div>
+                <motion.span
+                  className="rounded-full bg-success/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-success"
+                  animate={{ scale: [1, 1.15, 1] }}
+                  transition={{ repeat: Infinity, duration: 2 }}
+                >
+                  Available
+                </motion.span>
+              </div>
+              <div className="mt-4 flex items-center justify-between text-sm text-text-muted">
+                <span>{v.seats} seats</span>
+                <span className="text-base font-semibold text-text-primary">{v.price} DZD/day</span>
+              </div>
+              <motion.button
+                className="mt-5 w-full rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-bg-base"
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                Book Now
+              </motion.button>
+            </motion.div>
+          ))}
+        </motion.div>
+      </section>
+
       {/* Features */}
-      <section className={styles.features}>
+      <section className="mx-auto grid max-w-6xl gap-6 px-6 pb-12 md:grid-cols-4">
         {[
-          { icon: Car,         title: 'Browse & Reserve',  desc: 'Browse available vehicles from local agencies and reserve in seconds.' },
-          { icon: ShieldCheck, title: 'Secure & Verified',  desc: 'License upload verification ensures every rental is safe and documented.' },
-          { icon: Zap,         title: 'Instant Decisions',  desc: 'Agency owners confirm or reject in one click. No back-and-forth.' },
-          { icon: Users,       title: 'Two-sided Platform', desc: 'Built for both clients and rental agency owners with dedicated dashboards.' },
+          { icon: Car, title: 'Browse & Reserve', desc: 'Browse available vehicles from local agencies and reserve in seconds.' },
+          { icon: ShieldCheck, title: 'Secure & Verified', desc: 'License upload verification ensures every rental is safe and documented.' },
+          { icon: Zap, title: 'Instant Decisions', desc: 'Agency owners confirm or reject in one click. No back-and-forth.' },
+          { icon: Users, title: 'Two-sided Platform', desc: 'Built for both clients and rental agency owners with dedicated dashboards.' },
         ].map(f => (
-          <div key={f.title} className={styles.featureCard}>
-            <div className={styles.featureIcon}><f.icon size={22} /></div>
-            <h3 className={styles.featureTitle}>{f.title}</h3>
-            <p className={styles.featureDesc}>{f.desc}</p>
+          <div key={f.title} className="rounded-2xl border border-white/10 bg-bg-card p-5">
+            <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+              <f.icon size={20} />
+            </div>
+            <h3 className="text-sm font-semibold uppercase tracking-[0.3em]">{f.title}</h3>
+            <p className="mt-3 text-sm text-text-muted">{f.desc}</p>
           </div>
         ))}
       </section>
 
       {/* Footer */}
-      <footer className={styles.footer}>
-        <span className={styles.logo} style={{ fontSize: 16 }}>AUTO<span>·</span>LOC</span>
-        <span className={styles.footerText}>© 2026 Auto-Loc. Built with Supabase & Vercel.</span>
+      <footer className="border-t border-white/10 px-6 py-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-4">
+          <span className="font-heading tracking-[0.2em]">AUTO<span className="text-accent">·</span>LOC</span>
+          <span className="text-xs uppercase tracking-[0.3em] text-text-muted">© 2026 Auto-Loc. Built with Supabase & Vercel.</span>
+        </div>
       </footer>
     </div>
   )

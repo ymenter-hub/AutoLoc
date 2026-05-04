@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ToastProvider } from './contexts/ToastContext'
 
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
@@ -17,24 +19,50 @@ import ManageReservationsPage from './pages/owner/ManageReservationsPage'
 
 import LandingPage from './pages/LandingPage'
 
+function PageTransition({ children }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 24 }}
+      transition={{ duration: 0.35, ease: 'easeOut' }}
+    >
+      {children}
+    </motion.div>
+  )
+}
+
+function AppLoader() {
+  return (
+    <div className="min-h-screen bg-bg-base flex items-center justify-center px-6">
+      <div className="w-full max-w-2xl space-y-6">
+        <div className="h-10 w-48 rounded-xl skeleton" />
+        <div className="h-6 w-72 rounded-lg skeleton" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="h-32 rounded-2xl skeleton" />
+          <div className="h-32 rounded-2xl skeleton" />
+          <div className="h-32 rounded-2xl skeleton" />
+        </div>
+        <div className="h-48 rounded-2xl skeleton" />
+      </div>
+    </div>
+  )
+}
+
 function AppRoutes() {
   const { session, profile, loading } = useAuth()
+  const location = useLocation()
 
-  if (loading) {
-    return (
-      <div className="page-loader">
-        <div className="spinner" />
-      </div>
-    )
-  }
+  if (loading) return <AppLoader />
 
   return (
-    <Routes>
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
       {/* Public */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login"    element={!session ? <LoginPage />    : <Navigate to="/dashboard" replace />} />
-      <Route path="/register" element={!session ? <RegisterPage /> : <Navigate to="/dashboard" replace />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/" element={<PageTransition><LandingPage /></PageTransition>} />
+      <Route path="/login"    element={!session ? <PageTransition><LoginPage /></PageTransition>    : <Navigate to="/dashboard" replace />} />
+      <Route path="/register" element={!session ? <PageTransition><RegisterPage /></PageTransition> : <Navigate to="/dashboard" replace />} />
+      <Route path="/verify-email" element={<PageTransition><VerifyEmailPage /></PageTransition>} />
 
       {/* Smart redirect: wait until profile is known */}
       <Route
@@ -59,9 +87,9 @@ function AppRoutes() {
               : <Navigate to="/owner/dashboard" replace />
         }
       >
-        <Route path="dashboard"    element={<ClientDashboard />} />
-        <Route path="vehicles"     element={<VehiclesPage />} />
-        <Route path="reservations" element={<MyReservationsPage />} />
+        <Route path="dashboard"    element={<PageTransition><ClientDashboard /></PageTransition>} />
+        <Route path="vehicles"     element={<PageTransition><VehiclesPage /></PageTransition>} />
+        <Route path="reservations" element={<PageTransition><MyReservationsPage /></PageTransition>} />
       </Route>
 
       {/* OWNER */}
@@ -75,13 +103,14 @@ function AppRoutes() {
               : <Navigate to="/client/dashboard" replace />
         }
       >
-        <Route path="dashboard"    element={<OwnerDashboard />} />
-        <Route path="vehicles"     element={<ManageVehiclesPage />} />
-        <Route path="reservations" element={<ManageReservationsPage />} />
+        <Route path="dashboard"    element={<PageTransition><OwnerDashboard /></PageTransition>} />
+        <Route path="vehicles"     element={<PageTransition><ManageVehiclesPage /></PageTransition>} />
+        <Route path="reservations" element={<PageTransition><ManageReservationsPage /></PageTransition>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </AnimatePresence>
   )
 }
 
@@ -89,7 +118,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        <ToastProvider>
+          <AppRoutes />
+        </ToastProvider>
       </AuthProvider>
     </BrowserRouter>
   )
