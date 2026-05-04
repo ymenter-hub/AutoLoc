@@ -1,16 +1,36 @@
 import { Link } from 'react-router-dom'
-import { Car, ShieldCheck, Zap, Users } from 'lucide-react'
+import { Car, ShieldCheck, Zap, Users, LayoutDashboard, LogOut } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import styles from './Landing.module.css'
 
 export default function LandingPage() {
+  const { session, profile, signOut } = useAuth()
+
   return (
     <div className={styles.page}>
       {/* Nav */}
       <nav className={styles.nav}>
         <span className={styles.logo}>AUTO<span>·</span>LOC</span>
         <div className={styles.navLinks}>
-          <Link to="/login"    className={styles.navLink}>Sign In</Link>
-          <Link to="/register" className={styles.navCta}>Get Started</Link>
+          {session ? (
+            <>
+              <div className={styles.userBadge}>
+                <span className={styles.userName}>{profile?.full_name}</span>
+                <span className={styles.userRole}>{profile?.role}</span>
+              </div>
+              <Link to="/dashboard" className={styles.navCta}>
+                <LayoutDashboard size={15} /> Dashboard
+              </Link>
+              <button className={styles.navSignOut} onClick={signOut}>
+                <LogOut size={15} />
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login"    className={styles.navLink}>Sign In</Link>
+              <Link to="/register" className={styles.navCta}>Get Started</Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -25,8 +45,14 @@ export default function LandingPage() {
           Browse premium vehicles, book instantly, and manage your rentals — all in one place.
         </p>
         <div className={styles.heroCtas}>
-          <Link to="/register?role=client" className={styles.ctaPrimary}>Find a Car</Link>
-          <Link to="/register?role=owner"  className={styles.ctaSecondary}>List Your Fleet →</Link>
+          {session ? (
+            <Link to="/dashboard" className={styles.ctaPrimary}>Go to Dashboard</Link>
+          ) : (
+            <>
+              <Link to="/register?role=client" className={styles.ctaPrimary}>Find a Car</Link>
+              <Link to="/register?role=owner"  className={styles.ctaSecondary}>List Your Fleet →</Link>
+            </>
+          )}
         </div>
       </section>
 
