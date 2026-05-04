@@ -4,27 +4,28 @@ import { supabase } from '../lib/supabase'
 const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  const [session, setSession] = useState(undefined) // undefined = still initializing
+  const [session, setSession] = useState(undefined)
   const [profile, setProfile] = useState(null)
-  const [profileLoading, setProfileLoading] = useState(false)
+  const [profileReady, setProfileReady] = useState(false)
 
   useEffect(() => {
-    // Get initial session on mount
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session)
       if (session) {
         fetchProfile(session.user.id)
+      } else {
+        setSession(null)
+        setProfileReady(true) // no session = nothing to fetch, ready immediately
       }
     })
 
-    // React to login / logout events
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session)
       if (session) {
         fetchProfile(session.user.id)
       } else {
         setProfile(null)
-        setProfileLoading(false)
+        setProfileReady(true)
       }
     })
 
@@ -32,23 +33,32 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchProfile(userId) {
-    setProfileLoading(true)
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    if (!error) setProfile(data)
-    setProfileLoading(false)
+    setProfileReady(false)
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single()
+      if (!error && data) {
+        setProfile(data)
+      } else {
+        // Profile fetch failed (RLS issue, table missing, etc.)
+        // Still mark as ready so the app doesn't hang
+        console.warn('Profile fetch failed:', error?.message)
+      }
+    } catch (e) {
+      console.warn('Profile fetch exception:', e)
+    } finally {
+      setProfileReady(true)
+    }
   }
 
   async function signUp({ email, password, fullName, role }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: fullName, role },
-      },
+      options: { data: { full_name: fullName, role } },
     })
     return { data, error }
   }
@@ -62,8 +72,8 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
-  // Loading = session not yet determined, OR session exists but profile not fetched yet
-  const loading = session === undefined || (session !== null && profileLoading)
+  // Only show spinner while we haven't determined auth state yet
+  const loading = session === undefined || !profileReady
 
   const value = {
     session,
