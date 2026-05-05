@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     fullName: '',
+    agencyName: '',
     email: '',
     password: '',
     role: 'client',
@@ -42,6 +43,7 @@ export default function RegisterPage() {
       password: form.password,
       fullName: form.fullName,
       role: form.role,
+      agencyName: form.role === 'owner' ? form.agencyName : null,
     })
     setLoading(false)
     if (error) setError(error.message)
@@ -108,9 +110,27 @@ export default function RegisterPage() {
                   name="fullName"
                   value={form.fullName}
                   onChange={handle}
-                  placeholder="John Doe"
+                  placeholder=""
                   required
                 />
+                {form.role === 'owner' && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <Input
+                      label="Agency Name"
+                      id="agencyName"
+                      name="agencyName"
+                      value={form.agencyName}
+                      onChange={handle}
+                      placeholder=""
+                      required={form.role === 'owner'}
+                    />
+                  </motion.div>
+                )}
                 <Button type="button" fullWidth size="lg" onClick={nextStep}>
                   Continue
                 </Button>
@@ -133,7 +153,7 @@ export default function RegisterPage() {
                   type="email"
                   value={form.email}
                   onChange={handle}
-                  placeholder="you@example.com"
+                  placeholder=""
                   required
                 />
                 <Input
@@ -143,7 +163,7 @@ export default function RegisterPage() {
                   type="password"
                   value={form.password}
                   onChange={handle}
-                  placeholder="Min. 6 characters"
+                  placeholder=""
                   required
                 />
 

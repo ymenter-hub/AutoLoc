@@ -14,13 +14,14 @@ export default function ManageReservationsPage() {
   const [actionId, setActionId] = useState(null)
   const [filter, setFilter] = useState('all')
   const { addToast } = useToast()
+  const [licenseLoading, setLicenseLoading] = useState(null)
 
   useEffect(() => { load() }, [])
 
   async function load() {
     const { data } = await supabase
       .from('reservations')
-      .select('*, vehicle:vehicles!inner(brand, model, owner_id, plate_number), client:profiles(full_name, phone)')
+      .select('*, vehicle:vehicles!inner(brand, model, owner_id, plate_number), client:profiles(full_name, phone, agency_name)')
       .eq('vehicle.owner_id', user.id)
       .order('created_at', { ascending: false })
     setReservations(data ?? [])
@@ -45,10 +46,27 @@ export default function ManageReservationsPage() {
     load()
   }
 
-  async function getLicenseUrl(path) {
-    const { data } = await supabase.storage.from('licenses').createSignedUrl(path, 60)
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank')
+  async function getLicenseUrl(pathOrUrl, reservationId) {
+  setLicenseLoading(reservationId)
+  try {
+    // If it's already a full URL (starts with http), open directly
+    if (pathOrUrl.startsWith('http')) {
+      window.open(pathOrUrl, '_blank')
+      return
+    }
+    // Otherwise it's a storage path — create a signed URL
+    const { data, error } = await supabase.storage
+      .from('licenses')
+      .createSignedUrl(pathOrUrl, 120)
+    if (error || !data?.signedUrl) {
+      addToast('Could not load license. It may have been deleted.', 'error')
+      return
+    }
+    window.open(data.signedUrl, '_blank')
+  } finally {
+    setLicenseLoading(null)
   }
+}
 
   const displayed = filter === 'all'
     ? reservations
@@ -151,10 +169,12 @@ export default function ManageReservationsPage() {
 
                   {r.license_url && (
                     <button
-                      className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-text-muted hover:border-white/30 hover:text-text-primary"
-                      onClick={() => getLicenseUrl(r.license_url)}
+                      className="flex items-center gap-2 rounded-lg border border-white/10 px-3 py-2 text-xs text-text-muted hover:border-white/30 hover:text-text-primary disabled:opacity-50"
+                      onClick={() => getLicenseUrl(r.license_url, r.id)}
+                      disabled={licenseLoading === r.id}
                     >
-                      <ExternalLink size={13} /> View License
+                      <ExternalLink size={13} />
+                      {licenseLoading === r.id ? 'Opening...' : 'View License'}
                     </button>
                   )}
 

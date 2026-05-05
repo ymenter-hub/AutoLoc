@@ -21,13 +21,14 @@ export default function VehiclesPage() {
   const [licenseFile, setLicenseFile] = useState(null)
   const [viewer, setViewer] = useState({ isOpen: false, images: [], index: 0 })
   const { addToast } = useToast()
+  const [availFilter, setAvailFilter] = useState('all') // 'all' | 'available' | 'unavailable'
 
   useEffect(() => { loadVehicles() }, [])
 
   async function loadVehicles() {
     const { data } = await supabase
       .from('vehicles')
-      .select('*, images:vehicle_images(url)')
+      .select('*, images:vehicle_images(url), owner:profiles(full_name, agency_name)')
       .order('created_at', { ascending: false })
     setVehicles(data ?? [])
     setLoading(false)
@@ -102,9 +103,14 @@ export default function VehiclesPage() {
     }
   }
 
-  const filtered = vehicles.filter(v =>
-    `${v.brand} ${v.model} ${v.plate_number}`.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = vehicles.filter(v => {
+  const matchesSearch = `${v.brand} ${v.model} ${v.plate_number}`.toLowerCase().includes(search.toLowerCase())
+  const matchesAvail =
+    availFilter === 'all' ? true :
+    availFilter === 'available' ? v.is_available :
+    !v.is_available
+  return matchesSearch && matchesAvail
+})
 
   const days = calcDays()
   const durationOptions = [1, 3, 7, 14]
@@ -136,6 +142,28 @@ export default function VehiclesPage() {
             onChange={e => setSearch(e.target.value)}
           />
         </div>
+        {/* Availability filter */}
+          <div className="mb-6 flex items-center gap-2">
+            {[
+              { key: 'all',         label: 'All' },
+              { key: 'available',   label: 'Available' },
+              { key: 'unavailable', label: 'Unavailable' },
+            ].map(opt => (
+              <button
+                key={opt.key}
+                type="button"
+                className={[
+                  'rounded-full border px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.2em] transition',
+                  availFilter === opt.key
+                    ? 'border-accent bg-accent text-bg-base'
+                    : 'border-white/10 text-text-muted hover:border-white/30',
+                ].join(' ')}
+                onClick={() => setAvailFilter(opt.key)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
       </div>
 
       {loading ? (
@@ -204,7 +232,12 @@ export default function VehiclesPage() {
               </div>
               <div className="mt-4">
                 <h3 className="text-lg font-semibold">
-                  {v.brand} {v.model}{' '}
+                  <p className="font-semibold">{v.brand} {v.model}</p>
+                  {(v.owner?.agency_name || v.owner?.full_name) && (
+                    <p className="mt-0.5 text-[11px] uppercase tracking-[0.15em] text-accent/70">
+                      {v.owner.agency_name || v.owner.full_name}
+                    </p>
+                  )}
                   <span className="text-sm text-text-muted">'{String(v.year).slice(2)}</span>
                 </h3>
                 <div className="mt-2 flex flex-wrap items-center gap-3 text-xs text-text-muted">
@@ -271,9 +304,17 @@ export default function VehiclesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Selected vehicle</p>
-                <p className="mt-1 text-lg font-semibold text-text-primary">
-                  {selected?.brand} {selected?.model}
-                </p>
+                <p className="text-lg font-semibold">{selected?.brand} {selected?.model}</p>
+                {selected?.owner?.agency_name && (
+                  <p className="mt-0.5 text-xs uppercase tracking-[0.2em] text-accent">
+                    {selected.owner.agency_name}
+                  </p>
+                )}
+                {selected?.owner?.full_name && (
+                  <p className="mt-0.5 text-xs text-text-muted">
+                    Owner: {selected.owner.full_name}
+                  </p>
+                )}
               </div>
               <div className="text-right">
                 <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Daily price</p>

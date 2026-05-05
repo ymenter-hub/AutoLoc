@@ -61,11 +61,11 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function signUp({ email, password, fullName, role }) {
+  async function signUp({ email, password, fullName, role, agencyName }) {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { full_name: fullName, role } },
+      options: { data: { full_name: fullName, role, agency_name: agencyName ?? null } },
     })
     return { data, error }
   }
@@ -75,11 +75,12 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
-  async function updateProfile({ fullName, phone }) {
+  async function updateProfile({ fullName, phone, agencyName }) {
     if (!session?.user?.id) return { error: { message: 'No session.' } }
     const updates = {
       full_name: fullName ?? profile?.full_name ?? null,
       phone: phone ?? profile?.phone ?? null,
+      agency_name: agencyName ?? profile?.agency_name ?? null,
     }
     const { error } = await supabase
       .from('profiles')

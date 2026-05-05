@@ -52,7 +52,7 @@ export default function LoginPage() {
             type="email"
             value={form.email}
             onChange={handle}
-            placeholder="you@example.com"
+            placeholder=""
             required
           />
           <Input
@@ -62,7 +62,7 @@ export default function LoginPage() {
             type="password"
             value={form.password}
             onChange={handle}
-            placeholder="••••••••"
+            placeholder=""
             required
           />
 

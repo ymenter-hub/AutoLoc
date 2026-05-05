@@ -8,7 +8,7 @@ import AvatarCropper from '../ui/AvatarCropper'
 import { useToast } from '../../contexts/ToastContext'
 
 export default function Navbar({ links = [] }) {
-  const { profile, signOut, updateAvatar } = useAuth()
+  const { profile, signOut, updateAvatar , isOwner } = useAuth()
   const { unreadCount } = useNotifications()
   const navigate = useNavigate()
   const location = useLocation()
@@ -226,6 +226,7 @@ export default function Navbar({ links = [] }) {
         }}
         onSave={async (blob, filename) => {
           const { error } = await updateAvatar(blob, filename)
+          setAvatarOpen(false) // close dropdown when avatar is saved
           if (error) addToast(error.message || 'Avatar upload failed.', 'error')
           else addToast('Avatar updated.', 'success')
         }}

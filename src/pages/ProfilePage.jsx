@@ -7,9 +7,10 @@ import Input from '../components/ui/Input'
 import AvatarCropper from '../components/ui/AvatarCropper'
 
 export default function ProfilePage() {
-  const { profile, updateAvatar, updateProfile } = useAuth()
+  const { profile, updateAvatar, updateProfile, isOwner } = useAuth()
   const [fullName, setFullName] = useState(profile?.full_name ?? '')
   const [phone, setPhone] = useState(profile?.phone ?? '')
+  const [agencyName, setAgencyName] = useState(profile?.agency_name ?? '')
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [cropFile, setCropFile] = useState(null)
@@ -19,7 +20,13 @@ export default function ProfilePage() {
   async function handleSave(e) {
     e.preventDefault()
     setSaving(true)
-    await updateProfile({ fullName, phone })
+    const { error } = await updateProfile({
+      fullName,
+      phone,
+      ...(isOwner ? { agencyName } : {}),
+    })
+    if (error) addToast(error.message || 'Failed to save.', 'error')
+    else addToast('Profile saved.', 'success')
     setSaving(false)
   }
 
@@ -61,6 +68,9 @@ export default function ProfilePage() {
             </label>
             <div>
               <p className="text-sm font-semibold text-text-primary">{profile?.full_name}</p>
+              {isOwner && profile?.agency_name && (
+                <p className="mt-0.5 text-xs text-accent">{profile.agency_name}</p>
+              )}
               <p className="text-xs uppercase tracking-[0.2em] text-text-muted">{profile?.role}</p>
             </div>
           </div>
@@ -78,7 +88,7 @@ export default function ProfilePage() {
               id="profile_full_name"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
-              placeholder="Your full name"
+              placeholder=""
               required
             />
             <Input
@@ -86,8 +96,17 @@ export default function ProfilePage() {
               id="profile_phone"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder="+213 000 000 000"
+              placeholder=""
             />
+            {isOwner && (
+              <Input
+                label="Agency Name"
+                id="profile_agency_name"
+                value={agencyName}
+                onChange={e => setAgencyName(e.target.value)}
+                placeholder=""
+              />
+            )}
           </div>
           <div className="mt-6 flex justify-end">
             <Button type="submit" loading={saving}>Save Changes</Button>

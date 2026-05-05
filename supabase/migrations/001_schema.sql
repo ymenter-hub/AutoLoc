@@ -13,6 +13,7 @@ CREATE TABLE public.profiles (
   phone       TEXT,
   avatar_url  TEXT,
   avatar_path TEXT,
+  agency_name TEXT,
   role        TEXT NOT NULL CHECK (role IN ('client', 'owner')) DEFAULT 'client',
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -115,11 +116,12 @@ CREATE TRIGGER on_reservation_status_change
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, full_name, role)
+  INSERT INTO public.profiles (id, full_name, role, agency_name)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'full_name', 'User'),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'client')
+    COALESCE(NEW.raw_user_meta_data->>'role', 'client'),
+    NEW.raw_user_meta_data->>'agency_name'
   );
   RETURN NEW;
 END;

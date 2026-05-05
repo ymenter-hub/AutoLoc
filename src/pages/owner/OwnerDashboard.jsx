@@ -82,7 +82,14 @@ export default function OwnerDashboard() {
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-3xl tracking-widest">Agency Dashboard</h1>
-          <p className="mt-2 text-sm text-text-muted">Welcome back, {profile?.full_name}</p>
+          <p className="mt-2 text-sm text-text-muted">
+            Welcome back, {profile?.full_name}
+            {profile?.agency_name && (
+              <span className="ml-2 rounded-md bg-accent/10 px-2 py-0.5 text-xs font-semibold uppercase tracking-[0.15em] text-accent">
+                {profile.agency_name}
+              </span>
+            )}
+          </p>
         </div>
         <Link to="/owner/vehicles" className="rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-bg-base">+ Add Vehicle</Link>
       </div>

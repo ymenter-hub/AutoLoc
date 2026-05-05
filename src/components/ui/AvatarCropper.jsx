@@ -60,24 +60,22 @@ export default function AvatarCropper({ file, isOpen, onClose, onSave }) {
   const imageUrl = preview
   const filename = file.name
 
-  async function handleSave(e) {
+  async function handleSave() {
     if (!croppedPixels) return
     setSaving(true)
-    const blob = await getCroppedBlob(imageUrl, croppedPixels)
-    if (!blob) {
+    try {
+      const blob = await getCroppedBlob(imageUrl, croppedPixels)
+      if (!blob) return
+      const fileName = filename || 'avatar.jpg'
+      const fileType = blob.type || 'image/jpeg'
+      const fileObject = new File([blob], fileName, { type: fileType })
+      await onSave(fileObject, fileName)
+    } catch (e) {
+      console.error('Avatar save error:', e)
+    } finally {
       setSaving(false)
-      return
+      onClose() // always close, even on error
     }
-    // Convert Blob to File to retain original filename and type
-    const fileName = filename || 'avatar.jpg'
-    const fileType = blob.type || 'image/jpeg'
-    const fileObject = new File([blob], fileName, { type: fileType })
-    const { error } = await onSave(fileObject, fileName)
-    if (error) {
-      console.error('Avatar save error:', error)
-    }
-    setSaving(false)
-    onClose()
   }
 
   return (

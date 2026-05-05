@@ -24,20 +24,33 @@ export default function MyReservationsPage() {
   }
 
   async function cancelReservation(id) {
-    setCancelling(id)
-    const { error } = await supabase
-      .from('reservations')
-      .update({ status: 'cancelled' })
-      .eq('id', id)
-      .eq('status', 'pending') // safety: only cancel if still pending
-    if (!error) {
-      setReservations(rs => rs.map(r => r.id === id ? { ...r, status: 'cancelled' } : r))
-      addToast('Reservation cancelled.', 'info')
-    } else {
-      addToast('Could not cancel. Try again.', 'error')
-    }
+  setCancelling(id)
+  // First verify it's still pending (RLS won't let us filter by status in update)
+  const { data: current } = await supabase
+    .from('reservations')
+    .select('status')
+    .eq('id', id)
+    .single()
+
+  if (current?.status !== 'pending') {
+    addToast('This reservation can no longer be cancelled.', 'error')
     setCancelling(null)
+    return
   }
+
+  const { error } = await supabase
+    .from('reservations')
+    .update({ status: 'cancelled' })
+    .eq('id', id)
+
+  if (!error) {
+    setReservations(rs => rs.map(r => r.id === id ? { ...r, status: 'cancelled' } : r))
+    addToast('Reservation cancelled.', 'info')
+  } else {
+    addToast(error.message, 'error')
+  }
+  setCancelling(null)
+}
 
   const displayed = filter === 'all'
     ? reservations
