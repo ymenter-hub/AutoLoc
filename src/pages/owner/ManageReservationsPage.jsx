@@ -21,14 +21,17 @@ export default function ManageReservationsPage() {
   useEffect(() => { load() }, [])
 
   async function load() {
-    const { data } = await supabase
-      .from('reservations')
-      .select('*, vehicle:vehicles!inner(brand, model, owner_id, plate_number), client:profiles(full_name, phone, agency_name)')
-      .eq('vehicle.owner_id', user.id)
-      .order('created_at', { ascending: false })
-    setReservations(data ?? [])
-    setLoading(false)
-  }
+  const { data, error } = await supabase
+    .from('reservations')
+    .select('*, vehicle:vehicles!inner(brand, model, owner_id, plate_number), client:profiles!client_id(full_name, phone)')
+    .eq('vehicle.owner_id', user.id)
+    .order('created_at', { ascending: false })
+  
+  console.log('reservations data:', JSON.stringify(data?.[0], null, 2))
+  console.log('error:', error)
+  setReservations(data ?? [])
+  setLoading(false)
+}
 
   async function updateStatus(id, status) {
     setActionId(id + status)
@@ -160,9 +163,15 @@ export default function ManageReservationsPage() {
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="space-y-2">
-                  <div>
-                    <span className="text-sm font-semibold">{r.client?.full_name}</span>
-                    {r.client?.phone && <span className="ml-2 text-xs text-text-muted">{r.client.phone}</span>}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-text-primary">
+                      {r.client?.full_name ?? <span className="italic text-text-muted">Unknown client</span>}
+                    </span>
+                    {r.client?.phone && (
+                      <span className="rounded bg-bg-base/60 px-2 py-0.5 text-[10px] tracking-wide text-text-muted">
+                        {r.client.phone}
+                      </span>
+                    )}
                   </div>
                   <div className="text-sm text-text-muted">
                     {r.vehicle?.brand} {r.vehicle?.model}
