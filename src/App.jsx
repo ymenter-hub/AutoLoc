@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { NotificationProvider } from './contexts/NotificationContext'
 import { ToastProvider } from './contexts/ToastContext'
 
+
 import LoginPage from './pages/auth/LoginPage'
 import RegisterPage from './pages/auth/RegisterPage'
 import VerifyEmailPage from './pages/auth/VerifyEmailPage'
@@ -129,6 +130,7 @@ export default function App() {
         <NotificationProvider>
           <ToastProvider>
             <AppRoutes />
+
           </ToastProvider>
         </NotificationProvider>
       </AuthProvider>

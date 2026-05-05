@@ -88,7 +88,6 @@ export default function ProfilePage() {
               id="profile_full_name"
               value={fullName}
               onChange={e => setFullName(e.target.value)}
-              placeholder=""
               required
             />
             <Input
@@ -96,7 +95,6 @@ export default function ProfilePage() {
               id="profile_phone"
               value={phone}
               onChange={e => setPhone(e.target.value)}
-              placeholder=""
             />
             {isOwner && (
               <Input
@@ -104,7 +102,6 @@ export default function ProfilePage() {
                 id="profile_agency_name"
                 value={agencyName}
                 onChange={e => setAgencyName(e.target.value)}
-                placeholder=""
               />
             )}
           </div>

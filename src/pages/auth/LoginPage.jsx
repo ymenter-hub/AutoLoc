@@ -52,7 +52,6 @@ export default function LoginPage() {
             type="email"
             value={form.email}
             onChange={handle}
-            placeholder=""
             required
           />
           <Input
@@ -62,7 +61,6 @@ export default function LoginPage() {
             type="password"
             value={form.password}
             onChange={handle}
-            placeholder=""
             required
           />
 

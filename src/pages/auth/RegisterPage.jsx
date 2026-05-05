@@ -110,7 +110,6 @@ export default function RegisterPage() {
                   name="fullName"
                   value={form.fullName}
                   onChange={handle}
-                  placeholder=""
                   required
                 />
                 {form.role === 'owner' && (
@@ -126,7 +125,6 @@ export default function RegisterPage() {
                       name="agencyName"
                       value={form.agencyName}
                       onChange={handle}
-                      placeholder=""
                       required={form.role === 'owner'}
                     />
                   </motion.div>
@@ -153,7 +151,6 @@ export default function RegisterPage() {
                   type="email"
                   value={form.email}
                   onChange={handle}
-                  placeholder=""
                   required
                 />
                 <Input
@@ -163,7 +160,6 @@ export default function RegisterPage() {
                   type="password"
                   value={form.password}
                   onChange={handle}
-                  placeholder=""
                   required
                 />
 

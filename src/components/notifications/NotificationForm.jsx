@@ -111,7 +111,6 @@ export default function NotificationForm() {
             onChange={e => setMessage(e.target.value)}
             rows={4}
             className="w-full resize-none rounded-xl border border-white/10 bg-bg-base p-4 text-sm text-text-primary focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-            placeholder="Type your message here..."
             required
           />
         </div>

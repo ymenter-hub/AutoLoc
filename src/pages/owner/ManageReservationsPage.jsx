@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
+import { useNotifications } from '../../contexts/NotificationContext'
 import Button from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 
@@ -14,6 +15,7 @@ export default function ManageReservationsPage() {
   const [actionId, setActionId] = useState(null)
   const [filter, setFilter] = useState('all')
   const { addToast } = useToast()
+  const { sendNotification } = useNotifications()
   const [licenseLoading, setLicenseLoading] = useState(null)
 
   useEffect(() => { load() }, [])
@@ -36,6 +38,16 @@ export default function ManageReservationsPage() {
       .eq('id', id)
     setActionId(null)
     if (error) { addToast(error.message, 'error'); return }
+
+    // Notify the client
+    const res = reservations.find(r => r.id === id)
+    if (res) {
+      await sendNotification({
+        receiverId: res.client_id,
+        message: `Your reservation for ${res.vehicle?.brand} ${res.vehicle?.model} has been ${status}.`,
+        type: status === 'confirmed' ? 'info' : 'alert'
+      })
+    }
 
     // The DB trigger handles auto-rejecting others and marking vehicle unavailable
     // Reload to reflect all the cascade changes

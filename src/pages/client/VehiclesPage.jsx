@@ -4,13 +4,14 @@ import { motion } from 'framer-motion'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../contexts/ToastContext'
+import { useNotifications } from '../../contexts/NotificationContext'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Modal from '../../components/ui/Modal'
 import VehicleImageViewer from '../../components/ui/VehicleImageViewer'
 
 export default function VehiclesPage() {
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [vehicles, setVehicles] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -21,6 +22,7 @@ export default function VehiclesPage() {
   const [licenseFile, setLicenseFile] = useState(null)
   const [viewer, setViewer] = useState({ isOpen: false, images: [], index: 0 })
   const { addToast } = useToast()
+  const { sendNotification } = useNotifications()
   const [availFilter, setAvailFilter] = useState('all') // 'all' | 'available' | 'unavailable'
 
   useEffect(() => { loadVehicles() }, [])
@@ -44,7 +46,7 @@ export default function VehiclesPage() {
   function closeModal() { setSelected(null) }
 
   function openViewer(v, index = 0) {
-    const urls = [v.image_url, ...(v.images?.map(img => img.url) ?? [])].filter(Boolean)
+    const urls = Array.from(new Set([v.image_url, ...(v.images?.map(img => img.url) ?? [])])).filter(Boolean)
     setViewer({ isOpen: true, images: urls, index })
   }
 
@@ -93,6 +95,16 @@ export default function VehiclesPage() {
         status: 'pending',
       })
       if (resErr) throw resErr
+      
+      // 3. Notify the owner
+      const ownerId = selected.owner_id || selected.owner?.id
+      if (ownerId) {
+        await sendNotification({
+          receiverId: ownerId,
+          message: `New reservation request for ${selected.brand} ${selected.model} from ${profile?.full_name || 'a client'}.`,
+          type: 'alert'
+        })
+      }
 
       addToast('Reservation submitted! Waiting for agency confirmation.', 'success')
       closeModal()
@@ -136,8 +148,7 @@ export default function VehiclesPage() {
         <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-bg-card px-4 py-2">
           <Search size={16} className="text-text-muted" />
           <input
-            className="w-52 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-            placeholder="Search by brand, model..."
+            className="w-52 bg-transparent text-sm text-text-primary outline-none"
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -282,11 +293,11 @@ export default function VehiclesPage() {
             </div>
             {(selected?.images?.length || selected?.image_url) && (
               <div className="mt-3 flex gap-2 overflow-x-auto">
-                {[selected?.image_url, ...(selected?.images?.map(img => img.url) ?? [])]
+                {Array.from(new Set([selected?.image_url, ...(selected?.images?.map(img => img.url) ?? [])]))
                   .filter(Boolean)
-                  .map(url => (
+                  .map((url, idx) => (
                     <button
-                      key={url}
+                      key={`${url}-${idx}`}
                       type="button"
                       className={[
                         'h-14 w-20 overflow-hidden rounded-lg border transition',
@@ -396,7 +407,6 @@ export default function VehiclesPage() {
               rows={3}
               value={form.notes}
               onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-              placeholder="Any special request..."
             />
           </div>
 

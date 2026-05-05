@@ -4,6 +4,8 @@ import { motion, animate } from 'framer-motion'
 import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { supabase } from '../lib/supabase'
+import '@n8n/chat/style.css';
+import { createChat } from '@n8n/chat';
 
 export default function LandingPage() {
   const { session, profile, signOut } = useAuth()
@@ -42,6 +44,28 @@ export default function LandingPage() {
     }
 
     loadLandingData()
+  }, [])
+
+  // Initialize n8n chat widget once on mount
+  useEffect(() => {
+    createChat({
+      webhookUrl: 'https://tawat11.app.n8n.cloud/webhook/9607bca5-88d0-4988-9409-1ec1477962c9/chat',
+      target: '#n8n-chat-container',
+      mode: 'window',
+      chatInputKey: 'chatInput',
+      chatSessionKey: 'sessionId',
+      defaultLanguage: 'en',
+      initialMessages: ['Hi there! 👋 I\'m the Auto-Loc assistant. Ask me about our vehicles, pricing, or bookings!'],
+      i18n: {
+        en: {
+          title: 'Auto-Loc Assistant ✨',
+          subtitle: 'Powered by Gemini Flash',
+          footer: '',
+          getStarted: 'New Conversation',
+          inputPlaceholder: 'Ask about cars, pricing, availability...',
+        },
+      },
+    })
   }, [])
 
   function StatCounter({ value }) {
@@ -304,6 +328,9 @@ export default function LandingPage() {
           <span className="text-xs uppercase tracking-[0.3em] text-text-muted">© 2026 Auto-Loc. Built with Supabase & Vercel.</span>
         </div>
       </footer>
+
+      {/* n8n Chat Widget Mount Point */}
+      <div id="n8n-chat-container" />
     </div>
   )
 }

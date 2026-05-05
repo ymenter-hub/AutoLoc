@@ -36,7 +36,7 @@ export default function NotificationLog() {
 
   return (
     <div className="space-y-4">
-      <h2 className="font-heading text-xl tracking-widest uppercase mb-6">Sent Log</h2>
+      <h2 className="font-heading text-xl tracking-widest uppercase mb-6">Inbox</h2>
       <AnimatePresence initial={false}>
         {notifications.map((n) => {
           const style = getTypeStyle(n.type)
@@ -66,7 +66,7 @@ export default function NotificationLog() {
                   </p>
                   <div className="flex items-center gap-2 text-[10px] text-text-muted bg-white/5 w-fit px-2 py-1 rounded-lg">
                     <User size={12} />
-                    <span>Sent to individual client</span>
+                    <span>Notification Received</span>
                   </div>
                 </div>
               </div>

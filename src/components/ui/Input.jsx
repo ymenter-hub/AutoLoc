@@ -14,7 +14,7 @@ export default function Input({
     <div className={`relative ${className}`}>
       <input
         id={id}
-        placeholder={hasValue ? ' ' : (props.placeholder ?? ' ')}
+        placeholder=" "
         className={[
           'peer w-full rounded-xl border bg-bg-card/60 px-3 pb-2 pt-5 text-sm text-text-primary outline-none transition-all',
           'border-white/10 focus:border-accent focus:ring-2 focus:ring-accent/30',

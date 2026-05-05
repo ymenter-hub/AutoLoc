@@ -178,8 +178,7 @@ export default function ManageVehiclesPage() {
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-bg-card px-4 py-2">
             <input
-              className="w-48 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
-              placeholder="Search fleet..."
+              className="w-48 bg-transparent text-sm text-text-primary outline-none"
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -302,7 +301,7 @@ export default function ManageVehiclesPage() {
               <p className="text-xs text-text-muted italic">Gallery items are saved. Upload more to add to the collection.</p>
             )}
           </div>
-          <Input label="Description (optional)" id="description" name="description" value={form.description} onChange={handle} placeholder="Brief description of the vehicle..." />
+          <Input label="Description (optional)" id="description" name="description" value={form.description} onChange={handle} />
           <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={closeModal}>Cancel</Button>
             <Button type="submit" loading={saving}>{editTarget ? 'Save Changes' : 'Add Vehicle'}</Button>

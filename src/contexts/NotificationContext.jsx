@@ -27,22 +27,13 @@ export function NotificationProvider({ children }) {
           .from('notifications')
           .select('*')
           .order('created_at', { ascending: false })
-
-        if (profile.role === 'owner') {
-          query.eq('sender_id', session.user.id)
-        } else {
-          query.eq('receiver_id', session.user.id)
-        }
+        query.eq('receiver_id', session.user.id)
 
         const { data, error } = await query
         
         if (!error && data && isMounted) {
           setNotifications(data)
-          if (profile.role === 'client') {
-            setUnreadCount(data.filter(n => !n.is_read).length)
-          } else {
-            setUnreadCount(0)
-          }
+          setUnreadCount(data.filter(n => !n.is_read).length)
         }
       } catch (e) {
         console.error('Error fetching notifications:', e)
@@ -75,7 +66,7 @@ export function NotificationProvider({ children }) {
   }, [session?.user?.id, profile])
 
   async function markAsRead(id) {
-    if (!session?.user?.id || profile?.role !== 'client') return
+    if (!session?.user?.id) return
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
@@ -88,7 +79,7 @@ export function NotificationProvider({ children }) {
   }
 
   async function markAllAsRead() {
-    if (!session?.user?.id || profile?.role !== 'client') return
+    if (!session?.user?.id) return
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
@@ -101,8 +92,9 @@ export function NotificationProvider({ children }) {
     }
   }
 
-  async function sendNotification({ receiverId, message, type }) {
-    if (profile?.role !== 'owner') return { error: { message: 'Only owners can send notifications' } }
+  async function sendNotification({ receiverId, message, type = 'info' }) {
+    if (!session?.user?.id) return { error: { message: 'Must be logged in to send notifications' } }
+    
     const { data, error } = await supabase
       .from('notifications')
       .insert({

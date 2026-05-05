@@ -26,13 +26,12 @@ CREATE POLICY "Clients can view received notifications"
   TO authenticated
   USING (auth.uid() = receiver_id);
 
--- Owners can send notifications
-CREATE POLICY "Owners can send notifications"
+-- Authenticated users can send notifications
+CREATE POLICY "Users can send notifications"
   ON public.notifications FOR INSERT
   TO authenticated
   WITH CHECK (
-    auth.uid() = sender_id AND
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'owner')
+    auth.uid() = sender_id
   );
 
 -- Clients can update notifications (mark as read)
