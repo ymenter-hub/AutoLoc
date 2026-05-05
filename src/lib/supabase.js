@@ -33,6 +33,7 @@ function createMockClient() {
       from: () => ({
         upload: async () => ({ error: null }),
         createSignedUrl: async () => ({ data: { signedUrl: '' }, error: null }),
+        getPublicUrl: () => ({ data: { publicUrl: '' } }),
       }),
     },
   }

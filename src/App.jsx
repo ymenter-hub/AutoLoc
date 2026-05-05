@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { NotificationProvider } from './contexts/NotificationContext'
 import { ToastProvider } from './contexts/ToastContext'
 
 import LoginPage from './pages/auth/LoginPage'
@@ -11,13 +12,16 @@ import ClientLayout from './components/layout/ClientLayout'
 import ClientDashboard from './pages/client/ClientDashboard'
 import VehiclesPage from './pages/client/VehiclesPage'
 import MyReservationsPage from './pages/client/MyReservationsPage'
+import NotificationsPageClient from './pages/client/NotificationsPage'
 
 import OwnerLayout from './components/layout/OwnerLayout'
 import OwnerDashboard from './pages/owner/OwnerDashboard'
 import ManageVehiclesPage from './pages/owner/ManageVehiclesPage'
 import ManageReservationsPage from './pages/owner/ManageReservationsPage'
+import NotificationsPageOwner from './pages/owner/NotificationsPage'
 
 import LandingPage from './pages/LandingPage'
+import ProfilePage from './pages/ProfilePage'
 
 function PageTransition({ children }) {
   return (
@@ -87,9 +91,11 @@ function AppRoutes() {
               : <Navigate to="/owner/dashboard" replace />
         }
       >
-        <Route path="dashboard"    element={<PageTransition><ClientDashboard /></PageTransition>} />
-        <Route path="vehicles"     element={<PageTransition><VehiclesPage /></PageTransition>} />
-        <Route path="reservations" element={<PageTransition><MyReservationsPage /></PageTransition>} />
+        <Route path="dashboard"     element={<PageTransition><ClientDashboard /></PageTransition>} />
+        <Route path="vehicles"      element={<PageTransition><VehiclesPage /></PageTransition>} />
+        <Route path="reservations"  element={<PageTransition><MyReservationsPage /></PageTransition>} />
+        <Route path="notifications" element={<PageTransition><NotificationsPageClient /></PageTransition>} />
+        <Route path="profile"       element={<PageTransition><ProfilePage /></PageTransition>} />
       </Route>
 
       {/* OWNER */}
@@ -103,9 +109,11 @@ function AppRoutes() {
               : <Navigate to="/client/dashboard" replace />
         }
       >
-        <Route path="dashboard"    element={<PageTransition><OwnerDashboard /></PageTransition>} />
-        <Route path="vehicles"     element={<PageTransition><ManageVehiclesPage /></PageTransition>} />
-        <Route path="reservations" element={<PageTransition><ManageReservationsPage /></PageTransition>} />
+        <Route path="dashboard"     element={<PageTransition><OwnerDashboard /></PageTransition>} />
+        <Route path="vehicles"      element={<PageTransition><ManageVehiclesPage /></PageTransition>} />
+        <Route path="reservations"  element={<PageTransition><ManageReservationsPage /></PageTransition>} />
+        <Route path="notifications" element={<PageTransition><NotificationsPageOwner /></PageTransition>} />
+        <Route path="profile"       element={<PageTransition><ProfilePage /></PageTransition>} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -116,11 +124,13 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <AuthProvider>
-        <ToastProvider>
-          <AppRoutes />
-        </ToastProvider>
+        <NotificationProvider>
+          <ToastProvider>
+            <AppRoutes />
+          </ToastProvider>
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   )

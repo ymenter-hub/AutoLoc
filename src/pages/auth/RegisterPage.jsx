@@ -60,15 +60,16 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-bg-base px-6 py-16">
-      <motion.div
-        className="mx-auto w-full max-w-md rounded-2xl border border-white/10 bg-bg-card p-8"
-        initial={{ opacity: 0, scale: 0.96 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.35, ease: 'easeOut' }}
-      >
-        <Link to="/" className="font-heading text-2xl tracking-[0.2em]">AUTO<span className="text-accent">·</span>LOC</Link>
-        <h1 className="mt-6 font-heading text-3xl tracking-widest">Create account</h1>
-        <p className="mt-2 text-sm text-text-muted">Get started in seconds</p>
+      <div className="mx-auto grid w-full max-w-5xl items-center gap-8 md:grid-cols-[1.1fr_0.9fr]">
+        <motion.div
+          className="w-full rounded-2xl border border-white/10 bg-bg-card p-8"
+          initial={{ opacity: 0, scale: 0.96 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+        >
+          <Link to="/" className="font-heading text-2xl tracking-[0.2em]">AUTO<span className="text-accent">·</span>LOC</Link>
+          <h1 className="mt-6 font-heading text-3xl tracking-widest">Create account</h1>
+          <p className="mt-2 text-sm text-text-muted">Get started in seconds</p>
 
         <div className="mt-6 rounded-xl border border-white/10 bg-bg-base/40 p-2">
           <div className="grid grid-cols-2 gap-2">
@@ -169,11 +170,28 @@ export default function RegisterPage() {
           </AnimatePresence>
         </form>
 
-        <p className="mt-6 text-center text-sm text-text-muted">
-          Already have an account?{' '}
-          <Link to="/login" className="font-semibold text-accent">Sign in</Link>
-        </p>
-      </motion.div>
+          <p className="mt-6 text-center text-sm text-text-muted">
+            Already have an account?{' '}
+            <Link to="/login" className="font-semibold text-accent">Sign in</Link>
+          </p>
+        </motion.div>
+
+        <div className="relative hidden h-full overflow-hidden rounded-2xl border border-white/10 bg-bg-card md:block">
+          <video
+            className="h-full w-full object-cover"
+            src="/car.mp4"
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-bg-base/10 via-bg-base/40 to-bg-base/80" />
+          <div className="absolute bottom-6 left-6 right-6">
+            <p className="text-xs uppercase tracking-[0.4em] text-text-muted">Launch fast</p>
+            <p className="mt-2 text-lg font-semibold">Set up your fleet and start earning.</p>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

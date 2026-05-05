@@ -8,6 +8,8 @@ import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Select from '../../components/ui/Select'
 import Modal from '../../components/ui/Modal'
+import VehicleImageGallery from '../../components/ui/VehicleImageGallery'
+import VehicleImageViewer from '../../components/ui/VehicleImageViewer'
 
 const EMPTY_FORM = {
   brand: '', model: '', year: '', color: '', plate_number: '',
@@ -22,23 +24,40 @@ export default function ManageVehiclesPage() {
   const [modal, setModal] = useState(null) // null | 'add' | 'edit'
   const [editTarget, setEditTarget] = useState(null)
   const [form, setForm] = useState(EMPTY_FORM)
+  const [imageFiles, setImageFiles] = useState([])
+  const [imagePreviews, setImagePreviews] = useState([])
+  const [existingImages, setExistingImages] = useState([])
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(null)
+  const [search, setSearch] = useState('')
+  const [viewer, setViewer] = useState({ isOpen: false, images: [], index: 0 })
   const { addToast } = useToast()
 
   useEffect(() => { load() }, [])
 
+  useEffect(() => {
+    const previews = imageFiles.map(file => URL.createObjectURL(file))
+    setImagePreviews(previews)
+    return () => previews.forEach(url => URL.revokeObjectURL(url))
+  }, [imageFiles])
+
   async function load() {
     const { data } = await supabase
       .from('vehicles')
-      .select('*')
+      .select('*, images:vehicle_images(url)')
       .eq('owner_id', user.id)
       .order('created_at', { ascending: false })
     setVehicles(data ?? [])
     setLoading(false)
   }
 
-  function openAdd() { setForm(EMPTY_FORM); setEditTarget(null); setModal('form') }
+  function openAdd() {
+    setForm(EMPTY_FORM)
+    setEditTarget(null)
+    setImageFiles([])
+    setExistingImages([])
+    setModal('form')
+  }
   function openEdit(v) {
     setForm({
       brand: v.brand, model: v.model, year: String(v.year), color: v.color,
@@ -47,15 +66,51 @@ export default function ManageVehiclesPage() {
       seats: String(v.seats), image_url: v.image_url ?? '', description: v.description ?? '',
     })
     setEditTarget(v)
+    setImageFiles([])
+    setExistingImages((v.images ?? []).map(img => img.url))
     setModal('form')
   }
   function closeModal() { setModal(null); setEditTarget(null) }
 
+  function openViewer(v, index = 0) {
+    const urls = [v.image_url, ...(v.images?.map(img => img.url) ?? [])].filter(Boolean)
+    setViewer({ isOpen: true, images: urls, index })
+  }
+
+  async function handleRemoveExistingImage(url) {
+    if (!confirm('Remove this image?')) return
+    setExistingImages(prev => prev.filter(img => img !== url))
+    // Also remove from vehicle_images table
+    const { error } = await supabase.from('vehicle_images').delete().eq('url', url)
+    if (error) addToast(error.message, 'error')
+    else addToast('Image removed.', 'info')
+  }
+
   function handle(e) { setForm(f => ({ ...f, [e.target.name]: e.target.value })) }
+
+  async function uploadVehicleImages(vehicleId, files) {
+    const urls = []
+    for (const file of files) {
+      const ext = file.name.split('.').pop()
+      const path = `${vehicleId}/${Date.now()}-${Math.random().toString(16).slice(2)}.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('vehicles')
+        .upload(path, file, { upsert: true })
+      if (uploadError) throw uploadError
+      const { data } = supabase.storage.from('vehicles').getPublicUrl(path)
+      const url = data?.publicUrl
+      if (url) {
+        urls.push(url)
+        await supabase.from('vehicle_images').insert({ vehicle_id: vehicleId, url })
+      }
+    }
+    return urls
+  }
 
   async function saveVehicle(e) {
     e.preventDefault()
     setSaving(true)
+
     const payload = {
       brand: form.brand, model: form.model, year: parseInt(form.year),
       color: form.color, plate_number: form.plate_number,
@@ -68,10 +123,28 @@ export default function ManageVehiclesPage() {
     }
 
     let error
+    let vehicleId = editTarget?.id
     if (editTarget) {
       ({ error } = await supabase.from('vehicles').update(payload).eq('id', editTarget.id))
     } else {
-      ({ error } = await supabase.from('vehicles').insert(payload))
+      const { data, error: insertError } = await supabase
+        .from('vehicles')
+        .insert(payload)
+        .select('id')
+        .single()
+      error = insertError
+      if (!error) vehicleId = data.id
+    }
+
+    if (!error && imageFiles.length > 0 && vehicleId) {
+      try {
+        const urls = await uploadVehicleImages(vehicleId, imageFiles)
+        if (urls[0]) {
+          await supabase.from('vehicles').update({ image_url: urls[0] }).eq('id', vehicleId)
+        }
+      } catch (uploadError) {
+        error = uploadError
+      }
     }
 
     setSaving(false)
@@ -91,6 +164,10 @@ export default function ManageVehiclesPage() {
     addToast('Vehicle deleted.', 'info')
   }
 
+  const filtered = vehicles.filter(v =>
+    `${v.brand} ${v.model} ${v.plate_number}`.toLowerCase().includes(search.toLowerCase())
+  )
+
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
@@ -98,9 +175,19 @@ export default function ManageVehiclesPage() {
           <h1 className="font-heading text-3xl tracking-widest">My Fleet</h1>
           <p className="mt-2 text-sm text-text-muted">Manage your vehicles</p>
         </div>
-        <Button onClick={openAdd} size="md">
-          <Plus size={16} /> Add Vehicle
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-bg-card px-4 py-2">
+            <input
+              className="w-48 bg-transparent text-sm text-text-primary outline-none placeholder:text-text-muted"
+              placeholder="Search fleet..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          <Button onClick={openAdd} size="md">
+            <Plus size={16} /> Add Vehicle
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -114,25 +201,30 @@ export default function ManageVehiclesPage() {
             </div>
           ))}
         </div>
-      ) : vehicles.length === 0 ? (
+      ) : filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-16 text-text-muted">
           <Car size={36} />
-          <p>No vehicles yet. Add your first one.</p>
+          <p>No vehicles match your search.</p>
         </div>
       ) : (
         <div className="grid gap-6 md:grid-cols-3">
-          {vehicles.map((v, index) => (
+          {filtered.map((v, index) => (
             <motion.div
               key={v.id}
-              className="rounded-2xl border border-transparent bg-bg-card p-5"
+              className="group rounded-2xl border border-transparent bg-bg-card p-5"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.06 }}
               whileHover={{ y: -6, boxShadow: '0 20px 40px #E8B84B15', borderColor: '#E8B84B44' }}
             >
               <div className="relative h-32 w-full overflow-hidden rounded-xl bg-bg-base/50">
-                {v.image_url
-                  ? <img src={v.image_url} alt={`${v.brand} ${v.model}`} className="h-full w-full object-cover" />
+                {(v.image_url || v.images?.[0]?.url)
+                  ? <img 
+                      src={v.image_url || v.images?.[0]?.url} 
+                      alt={`${v.brand} ${v.model}`} 
+                      className="h-full w-full cursor-zoom-in object-cover transition-transform duration-300 group-hover:scale-110" 
+                      onClick={() => openViewer(v)}
+                    />
                   : <div className="flex h-full w-full items-center justify-center text-text-muted"><Car size={36} /></div>}
                 <span className={[
                   'absolute right-3 top-3 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
@@ -198,9 +290,17 @@ export default function ManageVehiclesPage() {
               ]}
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Input label="Seats" id="seats" name="seats" type="number" value={form.seats} onChange={handle} placeholder="5" />
-            <Input label="Image URL (optional)" id="image_url" name="image_url" value={form.image_url} onChange={handle} placeholder="https://..." />
+          <div className="space-y-3">
+            <label className="text-xs font-semibold uppercase tracking-[0.3em] text-text-muted">Vehicle Gallery</label>
+            <VehicleImageGallery 
+              files={imageFiles}
+              onFilesChange={setImageFiles}
+              existingUrls={existingImages}
+              onRemoveExisting={handleRemoveExistingImage}
+            />
+            {existingImages.length > 0 && imageFiles.length === 0 && (
+              <p className="text-xs text-text-muted italic">Gallery items are saved. Upload more to add to the collection.</p>
+            )}
           </div>
           <Input label="Description (optional)" id="description" name="description" value={form.description} onChange={handle} placeholder="Brief description of the vehicle..." />
           <div className="flex justify-end gap-3">
@@ -209,6 +309,13 @@ export default function ManageVehiclesPage() {
           </div>
         </form>
       </Modal>
+
+      <VehicleImageViewer
+        isOpen={viewer.isOpen}
+        images={viewer.images}
+        initialIndex={viewer.index}
+        onClose={() => setViewer(v => ({ ...v, isOpen: false }))}
+      />
     </div>
   )
 }

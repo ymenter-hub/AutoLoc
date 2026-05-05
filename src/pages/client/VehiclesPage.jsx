@@ -7,6 +7,7 @@ import { useToast } from '../../contexts/ToastContext'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Modal from '../../components/ui/Modal'
+import VehicleImageViewer from '../../components/ui/VehicleImageViewer'
 
 export default function VehiclesPage() {
   const { user } = useAuth()
@@ -14,9 +15,11 @@ export default function VehiclesPage() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
+  const [activeImage, setActiveImage] = useState('')
   const [reserving, setReserving] = useState(false)
   const [form, setForm] = useState({ start_date: '', end_date: '', notes: '' })
   const [licenseFile, setLicenseFile] = useState(null)
+  const [viewer, setViewer] = useState({ isOpen: false, images: [], index: 0 })
   const { addToast } = useToast()
 
   useEffect(() => { loadVehicles() }, [])
@@ -24,19 +27,41 @@ export default function VehiclesPage() {
   async function loadVehicles() {
     const { data } = await supabase
       .from('vehicles')
-      .select('*')
+      .select('*, images:vehicle_images(url)')
       .order('created_at', { ascending: false })
     setVehicles(data ?? [])
     setLoading(false)
   }
 
-  function openModal(v) { setSelected(v); setForm({ start_date: '', end_date: '', notes: '' }); setLicenseFile(null) }
+  function openModal(v) {
+    const firstImage = v.image_url || v.images?.[0]?.url || ''
+    setSelected(v)
+    setActiveImage(firstImage)
+    setForm({ start_date: '', end_date: '', notes: '' })
+    setLicenseFile(null)
+  }
   function closeModal() { setSelected(null) }
+
+  function openViewer(v, index = 0) {
+    const urls = [v.image_url, ...(v.images?.map(img => img.url) ?? [])].filter(Boolean)
+    setViewer({ isOpen: true, images: urls, index })
+  }
 
   function calcDays() {
     if (!form.start_date || !form.end_date) return 0
     const diff = (new Date(form.end_date) - new Date(form.start_date)) / 86400000
     return Math.max(0, diff)
+  }
+
+  function setDuration(days) {
+    const start = new Date()
+    const end = new Date()
+    end.setDate(start.getDate() + days)
+    setForm(f => ({
+      ...f,
+      start_date: start.toISOString().split('T')[0],
+      end_date: end.toISOString().split('T')[0],
+    }))
   }
 
   async function submitReservation(e) {
@@ -82,6 +107,7 @@ export default function VehiclesPage() {
   )
 
   const days = calcDays()
+  const durationOptions = [1, 3, 7, 14]
 
   const gridVariants = {
     show: { transition: { staggerChildren: 0.08 } },
@@ -142,7 +168,7 @@ export default function VehiclesPage() {
             <motion.div
               key={v.id}
               className={[
-                'rounded-2xl border border-transparent bg-bg-card p-5 transition',
+                'group rounded-2xl border border-transparent bg-bg-card p-5 transition',
                 !v.is_available ? 'opacity-60' : '',
               ].join(' ')}
               variants={cardVariants}
@@ -150,8 +176,16 @@ export default function VehiclesPage() {
               transition={{ delay: index * 0.08 }}
             >
               <div className="relative h-36 w-full overflow-hidden rounded-xl bg-bg-base/60">
-                {v.image_url ? (
-                  <img src={v.image_url} alt={`${v.brand} ${v.model}`} className="h-full w-full object-cover" />
+                {v.image_url || v.images?.[0]?.url ? (
+                  <img 
+                    src={v.image_url || v.images?.[0]?.url} 
+                    alt={`${v.brand} ${v.model}`} 
+                    className="h-full w-full cursor-zoom-in object-cover transition-transform duration-300 group-hover:scale-110" 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openViewer(v);
+                    }}
+                  />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-text-muted">
                     <Car size={40} />
@@ -203,6 +237,70 @@ export default function VehiclesPage() {
       {/* Reservation Modal */}
       <Modal isOpen={!!selected} onClose={closeModal} title={`Reserve: ${selected?.brand} ${selected?.model}`}>
         <form onSubmit={submitReservation} className="flex flex-col gap-4">
+          <div className="rounded-2xl border border-white/10 bg-bg-base/40 p-4">
+            <div className="relative h-40 w-full overflow-hidden rounded-xl bg-bg-base/60">
+              {activeImage ? (
+                <img src={activeImage} alt="Vehicle" className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-text-muted">
+                  <Car size={32} />
+                </div>
+              )}
+            </div>
+            {(selected?.images?.length || selected?.image_url) && (
+              <div className="mt-3 flex gap-2 overflow-x-auto">
+                {[selected?.image_url, ...(selected?.images?.map(img => img.url) ?? [])]
+                  .filter(Boolean)
+                  .map(url => (
+                    <button
+                      key={url}
+                      type="button"
+                      className={[
+                        'h-14 w-20 overflow-hidden rounded-lg border transition',
+                        activeImage === url ? 'border-accent' : 'border-white/10',
+                      ].join(' ')}
+                      onClick={() => setActiveImage(url)}
+                    >
+                      <img src={url} alt="Vehicle thumbnail" className="h-full w-full object-cover" />
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+          <div className="rounded-2xl border border-white/10 bg-bg-base/40 p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Selected vehicle</p>
+                <p className="mt-1 text-lg font-semibold text-text-primary">
+                  {selected?.brand} {selected?.model}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Daily price</p>
+                <p className="mt-1 text-lg font-semibold text-accent">{selected?.daily_price} DZD</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-white/10 bg-bg-card/60 p-4">
+            <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Quick durations</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {durationOptions.map(option => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setDuration(option)}
+                  className={[
+                    'rounded-full px-4 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition',
+                    days === option ? 'bg-accent text-bg-base' : 'border border-white/10 text-text-muted hover:border-white/30',
+                  ].join(' ')}
+                >
+                  {option} day{option > 1 ? 's' : ''}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid gap-4 md:grid-cols-2">
             <Input
               label="Start Date"
@@ -250,13 +348,16 @@ export default function VehiclesPage() {
             </label>
           </div>
 
-          <Input
-            label="Notes (optional)"
-            id="notes"
-            value={form.notes}
-            onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
-            placeholder="Any special request..."
-          />
+          <div>
+            <label className="text-xs font-semibold uppercase tracking-[0.2em] text-text-muted">Notes (optional)</label>
+            <textarea
+              className="mt-2 w-full rounded-xl border border-white/10 bg-bg-card/60 px-3 py-3 text-sm text-text-primary outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/30"
+              rows={3}
+              value={form.notes}
+              onChange={e => setForm(f => ({ ...f, notes: e.target.value }))}
+              placeholder="Any special request..."
+            />
+          </div>
 
           <div className="flex justify-end gap-3">
             <Button type="button" variant="ghost" onClick={closeModal}>Cancel</Button>
@@ -264,6 +365,13 @@ export default function VehiclesPage() {
           </div>
         </form>
       </Modal>
+
+      <VehicleImageViewer
+        isOpen={viewer.isOpen}
+        images={viewer.images}
+        initialIndex={viewer.index}
+        onClose={() => setViewer(v => ({ ...v, isOpen: false }))}
+      />
     </div>
   )
 }

@@ -11,6 +11,8 @@ CREATE TABLE public.profiles (
   id          UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   full_name   TEXT NOT NULL,
   phone       TEXT,
+  avatar_url  TEXT,
+  avatar_path TEXT,
   role        TEXT NOT NULL CHECK (role IN ('client', 'owner')) DEFAULT 'client',
   created_at  TIMESTAMPTZ DEFAULT NOW()
 );
@@ -35,6 +37,16 @@ CREATE TABLE public.vehicles (
   description   TEXT,
   is_available  BOOLEAN DEFAULT TRUE,
   created_at    TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ─────────────────────────────────────────
+-- 2b. VEHICLE IMAGES (gallery)
+-- ─────────────────────────────────────────
+CREATE TABLE public.vehicle_images (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  vehicle_id  UUID NOT NULL REFERENCES public.vehicles(id) ON DELETE CASCADE,
+  url         TEXT NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- ─────────────────────────────────────────

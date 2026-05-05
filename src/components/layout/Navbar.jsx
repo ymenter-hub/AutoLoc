@@ -3,14 +3,23 @@ import { Bell, LogOut, Menu, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useAuth } from '../../contexts/AuthContext'
+import { useNotifications } from '../../contexts/NotificationContext'
+import AvatarCropper from '../ui/AvatarCropper'
+import { useToast } from '../../contexts/ToastContext'
 
 export default function Navbar({ links = [] }) {
-  const { profile, signOut } = useAuth()
+  const { profile, signOut, updateAvatar } = useAuth()
+  const { unreadCount } = useNotifications()
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
   const [avatarOpen, setAvatarOpen] = useState(false)
-  const [hasNotification] = useState(false)
+  const [cropFile, setCropFile] = useState(null)
+  const [cropOpen, setCropOpen] = useState(false)
+  const { addToast } = useToast()
+
+  const profilePath = profile?.role === 'owner' ? '/owner/profile' : '/client/profile'
+  const notificationsPath = profile?.role === 'owner' ? '/owner/notifications' : '/client/notifications'
 
   const initials = useMemo(() => {
     const parts = (profile?.full_name ?? '').trim().split(' ').filter(Boolean)
@@ -62,21 +71,34 @@ export default function Navbar({ links = [] }) {
             <span className="text-[11px] uppercase tracking-[0.2em] text-accent">{profile?.role}</span>
           </div>
 
-          <motion.button
-            className="rounded-xl border border-white/10 p-2 text-text-muted hover:text-text-primary"
-            animate={hasNotification ? { rotate: [0, 15, -15, 0] } : undefined}
-            transition={{ duration: 0.5 }}
+          <Link
+            to={notificationsPath}
+            className="relative rounded-xl border border-white/10 p-2 text-text-muted hover:text-text-primary group"
             title="Notifications"
           >
-            <Bell size={16} />
-          </motion.button>
+            <motion.div
+              animate={unreadCount > 0 ? { rotate: [0, 15, -15, 15, -15, 0] } : {}}
+              transition={{ repeat: Infinity, duration: 2, repeatDelay: 3 }}
+            >
+              <Bell size={16} />
+            </motion.div>
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-accent text-[9px] font-bold text-bg-base">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
 
           <div className="relative">
             <button
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-accent/40 bg-accent/10 text-sm font-bold text-accent"
+              className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full border border-accent/40 bg-accent/10 text-sm font-bold text-accent"
               onClick={() => setAvatarOpen(v => !v)}
             >
-              {initials}
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+              ) : (
+                initials
+              )}
             </button>
             <AnimatePresence>
               {avatarOpen && (
@@ -87,6 +109,42 @@ export default function Navbar({ links = [] }) {
                   exit={{ opacity: 0, scale: 0.95, y: -6 }}
                   transition={{ duration: 0.2 }}
                 >
+                  <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-text-muted">
+                    <div className="h-10 w-10 overflow-hidden rounded-full border border-white/10">
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="Profile" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center bg-bg-base text-xs font-semibold text-accent">
+                          {initials}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em]">Profile</p>
+                      <label className="mt-1 inline-flex cursor-pointer items-center gap-2 text-xs font-semibold text-accent">
+                        Upload avatar
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={async e => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              setCropFile(file)
+                              setCropOpen(true)
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                  <Link
+                    to={profilePath}
+                    className="block rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-white/5 hover:text-text-primary"
+                    onClick={() => setAvatarOpen(false)}
+                  >
+                    Profile settings
+                  </Link>
                   <Link
                     to="/dashboard"
                     className="block rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-white/5 hover:text-text-primary"
@@ -124,6 +182,20 @@ export default function Navbar({ links = [] }) {
             exit={{ opacity: 0, y: -12 }}
           >
             <div className="flex flex-col gap-2">
+              <Link
+                to={profilePath}
+                className="rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-white/5 hover:text-text-primary"
+                onClick={() => setMenuOpen(false)}
+              >
+                Profile settings
+              </Link>
+              <Link
+                to={notificationsPath}
+                className="rounded-lg px-3 py-2 text-sm text-text-muted hover:bg-white/5 hover:text-text-primary"
+                onClick={() => setMenuOpen(false)}
+              >
+                Notifications {unreadCount > 0 && `(${unreadCount})`}
+              </Link>
               {links.map(link => (
                 <Link
                   key={link.to}
@@ -144,6 +216,20 @@ export default function Navbar({ links = [] }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <AvatarCropper
+        file={cropFile}
+        isOpen={cropOpen}
+        onClose={() => {
+          setCropOpen(false)
+          setCropFile(null)
+        }}
+        onSave={async (blob, filename) => {
+          const { error } = await updateAvatar(blob, filename)
+          if (error) addToast(error.message || 'Avatar upload failed.', 'error')
+          else addToast('Avatar updated.', 'success')
+        }}
+      />
     </motion.nav>
   )
 }

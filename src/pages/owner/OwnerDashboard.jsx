@@ -93,6 +93,27 @@ export default function OwnerDashboard() {
         <StatCard icon={CheckCircle2} value={stats.confirmed} label="Confirmed" color="text-success" />
       </div>
 
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <Link
+          to="/owner/vehicles"
+          className="group rounded-2xl border border-white/10 bg-bg-card p-5 transition hover:border-accent/40"
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Quick action</p>
+          <h3 className="mt-2 text-lg font-semibold">Add a new vehicle</h3>
+          <p className="mt-1 text-sm text-text-muted">Grow your fleet with premium listings.</p>
+          <span className="mt-4 inline-flex items-center text-sm font-semibold text-accent">Manage Fleet →</span>
+        </Link>
+        <Link
+          to="/owner/reservations"
+          className="group rounded-2xl border border-white/10 bg-bg-card p-5 transition hover:border-accent/40"
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Quick action</p>
+          <h3 className="mt-2 text-lg font-semibold">Review new requests</h3>
+          <p className="mt-1 text-sm text-text-muted">Confirm or reject pending reservations.</p>
+          <span className="mt-4 inline-flex items-center text-sm font-semibold text-accent">Manage Reservations →</span>
+        </Link>
+      </div>
+
       <div className="mt-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-heading text-xl tracking-widest">Latest Requests</h2>

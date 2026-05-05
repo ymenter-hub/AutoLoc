@@ -9,6 +9,7 @@ export default function MyReservationsPage() {
   const [reservations, setReservations] = useState([])
   const [loading, setLoading] = useState(true)
   const [cancelling, setCancelling] = useState(null)
+  const [filter, setFilter] = useState('all')
   const { addToast } = useToast()
 
   useEffect(() => { load() }, [])
@@ -38,11 +39,31 @@ export default function MyReservationsPage() {
     setCancelling(null)
   }
 
+  const displayed = filter === 'all'
+    ? reservations
+    : reservations.filter(r => r.status === filter)
+
   return (
     <div>
       <div className="mb-8">
         <h1 className="font-heading text-3xl tracking-widest">My Bookings</h1>
         <p className="mt-2 text-sm text-text-muted">All your reservation history</p>
+      </div>
+
+      <div className="mb-6 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-bg-card/60 p-2">
+        {['all', 'pending', 'confirmed', 'rejected', 'cancelled'].map(status => (
+          <button
+            key={status}
+            type="button"
+            className={[
+              'rounded-lg px-3 py-2 text-xs font-semibold uppercase tracking-[0.2em] transition',
+              filter === status ? 'bg-accent text-bg-base' : 'text-text-muted hover:bg-white/5',
+            ].join(' ')}
+            onClick={() => setFilter(status)}
+          >
+            {status}
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -59,14 +80,14 @@ export default function MyReservationsPage() {
             </div>
           ))}
         </div>
-      ) : reservations.length === 0 ? (
+      ) : displayed.length === 0 ? (
         <div className="flex flex-col items-center gap-3 py-14 text-text-muted">
           <CalendarDays size={36} />
-          <p>You have no reservations yet.</p>
+          <p>No {filter === 'all' ? '' : filter} reservations found.</p>
         </div>
       ) : (
         <div className="space-y-4">
-          {reservations.map(r => (
+          {displayed.map(r => (
             <div key={r.id} className="flex flex-wrap gap-4 rounded-2xl border border-white/10 bg-bg-card p-4">
               <div className="h-16 w-20 overflow-hidden rounded-xl bg-bg-base/50">
                 {r.vehicle?.image_url

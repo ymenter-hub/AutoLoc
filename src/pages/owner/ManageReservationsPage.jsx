@@ -54,6 +54,12 @@ export default function ManageReservationsPage() {
     ? reservations
     : reservations.filter(r => r.status === filter)
 
+  const counts = {
+    pending: reservations.filter(r => r.status === 'pending').length,
+    confirmed: reservations.filter(r => r.status === 'confirmed').length,
+    rejected: reservations.filter(r => r.status === 'rejected').length,
+  }
+
   return (
     <div>
       <div className="mb-8 flex flex-wrap items-start justify-between gap-4">
@@ -74,6 +80,21 @@ export default function ManageReservationsPage() {
               {f}
             </button>
           ))}
+        </div>
+      </div>
+
+      <div className="mb-6 grid gap-4 md:grid-cols-3">
+        <div className="rounded-2xl border border-white/10 bg-bg-card p-4">
+          <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Pending</p>
+          <p className="mt-2 text-2xl font-heading tracking-widest text-accent">{counts.pending}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-bg-card p-4">
+          <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Confirmed</p>
+          <p className="mt-2 text-2xl font-heading tracking-widest text-success">{counts.confirmed}</p>
+        </div>
+        <div className="rounded-2xl border border-white/10 bg-bg-card p-4">
+          <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Rejected</p>
+          <p className="mt-2 text-2xl font-heading tracking-widest text-danger">{counts.rejected}</p>
         </div>
       </div>
 

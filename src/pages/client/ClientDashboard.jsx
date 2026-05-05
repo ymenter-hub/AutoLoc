@@ -85,6 +85,27 @@ export default function ClientDashboard() {
         <StatCard icon={XCircle} value={counts.rejected} label="Rejected" color="text-danger" />
       </div>
 
+      <div className="mt-8 grid gap-4 md:grid-cols-2">
+        <Link
+          to="/client/vehicles"
+          className="group rounded-2xl border border-white/10 bg-bg-card p-5 transition hover:border-accent/40"
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Quick action</p>
+          <h3 className="mt-2 text-lg font-semibold">Find a car today</h3>
+          <p className="mt-1 text-sm text-text-muted">Explore new arrivals and premium vehicles.</p>
+          <span className="mt-4 inline-flex items-center text-sm font-semibold text-accent">Browse Fleet →</span>
+        </Link>
+        <Link
+          to="/client/reservations"
+          className="group rounded-2xl border border-white/10 bg-bg-card p-5 transition hover:border-accent/40"
+        >
+          <p className="text-xs uppercase tracking-[0.3em] text-text-muted">Quick action</p>
+          <h3 className="mt-2 text-lg font-semibold">Manage bookings</h3>
+          <p className="mt-1 text-sm text-text-muted">Track statuses, cancellations, and history.</p>
+          <span className="mt-4 inline-flex items-center text-sm font-semibold text-accent">View Reservations →</span>
+        </Link>
+      </div>
+
       <div className="mt-10">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="font-heading text-xl tracking-widest">Recent Bookings</h2>

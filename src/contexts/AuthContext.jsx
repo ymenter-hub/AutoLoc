@@ -41,7 +41,14 @@ export function AuthProvider({ children }) {
         .eq('id', userId)
         .single()
       if (!error && data) {
-        setProfile(data)
+        let avatarUrl = data.avatar_url
+        if (data.avatar_path) {
+          const { data: signed } = await supabase.storage
+            .from('avatars')
+            .createSignedUrl(data.avatar_path, 60 * 60)
+          avatarUrl = signed?.signedUrl ?? avatarUrl
+        }
+        setProfile({ ...data, avatar_url: avatarUrl })
       } else {
         // Profile fetch failed (RLS issue, table missing, etc.)
         // Still mark as ready so the app doesn't hang
@@ -68,8 +75,78 @@ export function AuthProvider({ children }) {
     return { data, error }
   }
 
+  async function updateProfile({ fullName, phone }) {
+    if (!session?.user?.id) return { error: { message: 'No session.' } }
+    const updates = {
+      full_name: fullName ?? profile?.full_name ?? null,
+      phone: phone ?? profile?.phone ?? null,
+    }
+    const { error } = await supabase
+      .from('profiles')
+      .update(updates)
+      .eq('id', session.user.id)
+    if (!error) setProfile(p => (p ? { ...p, ...updates } : p))
+    return { error }
+  }
+
   async function signOut() {
     await supabase.auth.signOut()
+  }
+
+const updateAvatar = async (file, filename) => {
+    if (!session?.user?.id || !file) return { error: { message: 'No file provided.' } }
+
+    // Validate file size (max 5MB)
+    const maxSize = 5 * 1024 * 1024
+    if (file.size && file.size > maxSize) {
+      const err = { message: 'File too large. Max 5MB allowed.' }
+      console.error('Avatar upload error:', err)
+      return { error: err }
+    }
+
+    const originalName = filename || file.name || 'avatar.jpg'
+    const ext = originalName.split('.').pop()
+    const path = `${session.user.id}/${Date.now()}.${ext}`
+    const uploadFile = file instanceof File
+      ? file
+      : new File([file], originalName, { type: file.type || 'image/jpeg' })
+    let uploadError = null
+    try {
+      const { error } = await supabase.storage
+        .from('avatars')
+        .upload(path, uploadFile, { upsert: true, contentType: uploadFile.type })
+      uploadError = error
+    } catch (e) {
+      console.error('Unexpected error during avatar upload:', e)
+      return { error: e }
+    }
+    if (uploadError) {
+      console.error('Avatar upload error (status', uploadError.status, '):', uploadError)
+      return { error: uploadError }
+    }
+
+    const { data: signed } = await supabase.storage
+      .from('avatars')
+      .createSignedUrl(path, 60 * 60)
+    const avatarUrl = signed?.signedUrl ?? null
+
+    let profileError = null
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarUrl, avatar_path: path })
+        .eq('id', session.user.id)
+      profileError = error
+    } catch (e) {
+      console.error('Unexpected error updating profile after avatar upload:', e)
+      return { error: e }
+    }
+    if (!profileError) {
+      setProfile(p => (p ? { ...p, avatar_url: avatarUrl, avatar_path: path } : p))
+    } else {
+      console.error('Profile update error after avatar upload (status', profileError?.status, '):', profileError)
+    }
+    return { error: profileError }
   }
 
   // Only show spinner while we haven't determined auth state yet
@@ -85,6 +162,8 @@ export function AuthProvider({ children }) {
     signUp,
     signIn,
     signOut,
+    updateAvatar,
+    updateProfile,
     refreshProfile: () => session && fetchProfile(session.user.id),
   }
 

@@ -1,11 +1,12 @@
 import { Outlet } from 'react-router-dom'
-import { LayoutDashboard, Car, ClipboardList } from 'lucide-react'
+import { LayoutDashboard, Car, ClipboardList, Bell } from 'lucide-react'
 import Navbar from './Navbar'
 
 const OWNER_LINKS = [
   { to: '/owner/dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
   { to: '/owner/vehicles',      label: 'My Fleet',      icon: Car },
   { to: '/owner/reservations',  label: 'Reservations',  icon: ClipboardList },
+  { to: '/owner/notifications', label: 'Broadcast',     icon: Bell },
 ]
 
 export default function OwnerLayout() {

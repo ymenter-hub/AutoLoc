@@ -1,11 +1,12 @@
 import { Outlet } from 'react-router-dom'
-import { LayoutDashboard, Car, CalendarDays } from 'lucide-react'
+import { LayoutDashboard, Car, CalendarDays, Bell } from 'lucide-react'
 import Navbar from './Navbar'
 
 const CLIENT_LINKS = [
   { to: '/client/dashboard',    label: 'Dashboard',     icon: LayoutDashboard },
   { to: '/client/vehicles',     label: 'Browse Cars',   icon: Car },
   { to: '/client/reservations', label: 'My Bookings',   icon: CalendarDays },
+  { to: '/client/notifications', label: 'Inbox',         icon: Bell },
 ]
 
 export default function ClientLayout() {

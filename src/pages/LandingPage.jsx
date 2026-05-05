@@ -1,28 +1,48 @@
 import { Link } from 'react-router-dom'
 import { Car, ShieldCheck, Zap, Users, LayoutDashboard, LogOut } from 'lucide-react'
 import { motion, animate } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 
 export default function LandingPage() {
   const { session, profile, signOut } = useAuth()
   const title = 'AUTO-LOC'
 
-  const stats = useMemo(() => (
-    [
-      { label: 'Total Cars', value: 320 },
-      { label: 'Active Clients', value: 1200 },
-      { label: 'Monthly Rentals', value: 860 },
-    ]
-  ), [])
+  const [stats, setStats] = useState([
+    { label: 'Total Cars', value: 0 },
+    { label: 'Active Clients', value: 0 },
+    { label: 'Monthly Rentals', value: 0 },
+  ])
+  const [featured, setFeatured] = useState([])
+  const [loadingFeatured, setLoadingFeatured] = useState(true)
 
-  const cards = useMemo(() => (
-    [
-      { brand: 'Audi', model: 'A4', price: 7200, fuel: 'petrol', seats: 5, transmission: 'automatic' },
-      { brand: 'Tesla', model: 'Model 3', price: 9800, fuel: 'electric', seats: 5, transmission: 'automatic' },
-      { brand: 'Toyota', model: 'Yaris', price: 4200, fuel: 'hybrid', seats: 5, transmission: 'manual' },
-    ]
-  ), [])
+  useEffect(() => {
+    async function loadLandingData() {
+      const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      const [vehiclesRes, clientsRes, rentalsRes, featuredRes] = await Promise.all([
+        supabase.from('vehicles').select('*', { count: 'exact', head: true }),
+        supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'client'),
+        supabase.from('reservations').select('*', { count: 'exact', head: true }).gte('created_at', monthAgo),
+        supabase
+          .from('vehicles')
+          .select('id, brand, model, daily_price, fuel_type, seats, transmission, image_url, is_available')
+          .order('created_at', { ascending: false })
+          .limit(3),
+      ])
+
+      setStats([
+        { label: 'Total Cars', value: vehiclesRes.count ?? 0 },
+        { label: 'Active Clients', value: clientsRes.count ?? 0 },
+        { label: 'Monthly Rentals', value: rentalsRes.count ?? 0 },
+      ])
+
+      setFeatured(featuredRes.data ?? [])
+      setLoadingFeatured(false)
+    }
+
+    loadLandingData()
+  }, [])
 
   function StatCounter({ value }) {
     const [count, setCount] = useState(0)
@@ -195,30 +215,57 @@ export default function LandingPage() {
           animate="show"
           variants={{ show: { transition: { staggerChildren: 0.08 } } }}
         >
-          {cards.map((v, index) => (
+          {loadingFeatured && Array.from({ length: 3 }).map((_, index) => (
+            <div key={`featured-skel-${index}`} className="rounded-2xl border border-white/10 bg-bg-card p-5">
+              <div className="h-32 w-full rounded-xl skeleton" />
+              <div className="mt-4 h-4 w-40 rounded skeleton" />
+              <div className="mt-2 h-3 w-28 rounded skeleton" />
+              <div className="mt-5 h-9 w-full rounded-xl skeleton" />
+            </div>
+          ))}
+
+          {!loadingFeatured && featured.length === 0 && (
+            <div className="col-span-3 rounded-2xl border border-white/10 bg-bg-card p-6 text-center text-text-muted">
+              No vehicles listed yet. Add your first car to showcase it here.
+            </div>
+          )}
+
+          {!loadingFeatured && featured.map((v, index) => (
             <motion.div
-              key={`${v.brand}-${v.model}`}
+              key={v.id}
               className="group rounded-2xl border border-transparent bg-bg-card p-5 transition"
               variants={{ hidden: { opacity: 0, y: 30 }, show: { opacity: 1, y: 0 } }}
               whileHover={{ y: -6, boxShadow: '0 20px 40px #E8B84B15', borderColor: '#E8B84B44' }}
               transition={{ delay: index * 0.08 }}
             >
-              <div className="flex items-center justify-between">
+              <div className="relative h-32 w-full overflow-hidden rounded-xl bg-bg-base/60">
+                {v.image_url ? (
+                  <img src={v.image_url} alt={`${v.brand} ${v.model}`} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-text-muted">
+                    <Car size={32} />
+                  </div>
+                )}
+              </div>
+              <div className="mt-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-text-primary">{v.brand} {v.model}</h3>
-                  <p className="text-xs uppercase tracking-[0.3em] text-text-muted">{v.fuel} · {v.transmission}</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-text-muted">{v.fuel_type} · {v.transmission}</p>
                 </div>
                 <motion.span
-                  className="rounded-full bg-success/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-success"
-                  animate={{ scale: [1, 1.15, 1] }}
-                  transition={{ repeat: Infinity, duration: 2 }}
+                  className={[
+                    'rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em]',
+                    v.is_available ? 'bg-success/10 text-success' : 'bg-danger/10 text-danger',
+                  ].join(' ')}
+                  animate={v.is_available ? { scale: [1, 1.15, 1] } : undefined}
+                  transition={v.is_available ? { repeat: Infinity, duration: 2 } : undefined}
                 >
-                  Available
+                  {v.is_available ? 'Available' : 'Unavailable'}
                 </motion.span>
               </div>
               <div className="mt-4 flex items-center justify-between text-sm text-text-muted">
                 <span>{v.seats} seats</span>
-                <span className="text-base font-semibold text-text-primary">{v.price} DZD/day</span>
+                <span className="text-base font-semibold text-text-primary">{v.daily_price} DZD/day</span>
               </div>
               <motion.button
                 className="mt-5 w-full rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-bg-base"
