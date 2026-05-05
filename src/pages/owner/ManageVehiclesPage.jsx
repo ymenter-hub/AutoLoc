@@ -255,16 +255,16 @@ export default function ManageVehiclesPage() {
       <Modal isOpen={modal === 'form'} onClose={closeModal} title={editTarget ? 'Edit Vehicle' : 'Add Vehicle'} size="lg">
         <form onSubmit={saveVehicle} className="flex flex-col gap-4">
           <div className="grid gap-4 md:grid-cols-2">
-            <Input label="Brand" id="brand" name="brand" value={form.brand} onChange={handle} placeholder="Toyota" required />
-            <Input label="Model" id="model" name="model" value={form.model} onChange={handle} placeholder="Corolla" required />
+            <Input label="Brand" id="brand" name="brand" value={form.brand} onChange={handle} placeholder="" required />
+            <Input label="Model" id="model" name="model" value={form.model} onChange={handle} placeholder="" required />
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <Input label="Year" id="year" name="year" type="number" value={form.year} onChange={handle} placeholder="2022" required />
-            <Input label="Color" id="color" name="color" value={form.color} onChange={handle} placeholder="White" required />
-            <Input label="Plate Number" id="plate_number" name="plate_number" value={form.plate_number} onChange={handle} placeholder="19-DZA-123" required />
+            <Input label="Year" id="year" name="year" type="number" value={form.year} onChange={handle} placeholder="" required />
+            <Input label="Color" id="color" name="color" value={form.color} onChange={handle} placeholder="" required />
+            <Input label="Plate Number" id="plate_number" name="plate_number" value={form.plate_number} onChange={handle} placeholder="" required />
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <Input label="Daily Price (DZD)" id="daily_price" name="daily_price" type="number" value={form.daily_price} onChange={handle} placeholder="3500" required />
+            <Input label="Daily Price (DZD)" id="daily_price" name="daily_price" type="number" value={form.daily_price} onChange={handle} placeholder="" required />
             <Select
               label="Fuel Type"
               id="fuel_type"
